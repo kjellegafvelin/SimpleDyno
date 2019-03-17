@@ -204,7 +204,7 @@ Public Class Main
     'Sub Forms
     Public Shared frmDyno As Dyno
     Public Shared frmCOM As COM
-    Public Shared frmAnalysis As Analysis
+    Public Shared frmAnalysis As AnalysisForm
     Public Shared frmFit As Fit
     Public Shared frmCorrection As Correction
 
@@ -966,7 +966,7 @@ Public Class Main
         'Create Instances of the sub forms
         frmDyno = New Dyno
         frmCOM = New COM
-        frmAnalysis = New Analysis
+        frmAnalysis = New AnalysisForm
         frmFit = New Fit
         frmCorrection = New Correction
 

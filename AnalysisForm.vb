@@ -1,6 +1,12 @@
 ﻿Imports System.IO
 Imports System.Drawing.Drawing2D
-Public Class Analysis
+Imports System.Collections.Generic
+Imports LiveCharts
+Imports LiveCharts.Wpf
+Imports OxyPlot.Axes
+Imports OxyPlot
+
+Public Class AnalysisForm
     'Overlay Specific
     Private OverlayBMP As Graphics
     Private OverlayBitMap As Bitmap
@@ -8,7 +14,7 @@ Public Class Analysis
     Private PicOverlayWidth As Integer
     Private OverlayFileCount As Integer = 0
 
-    Private DataInputFile As StreamReader
+    Private dataFileReader As StreamReader
     Private OverlayFiles() As String
     'CHECK - THIS IS A LOCAL VALUE OF TICKLENGTH - MAY NEED TO RESCALE WITH RESIZE
     Private TickLength As Integer = 10
@@ -20,8 +26,14 @@ Public Class Analysis
     Dim xAxis As Double
     Private Const MAXDATAFILES As Integer = 5
     Private AnalyzedData(MAXDATAFILES, Main.LAST, Main.MAXDATAPOINTS) As Double
+    Private chartControl As ChartControl
+    Private OverlayXSelected As Double
+    Private OverlayPlotMax As Boolean = True
+
     Friend Sub Analysis_Setup()
         ReDim OverlayFiles(MAXDATAFILES)
+
+        chartControl = New ChartControl()
 
         Me.Size = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea.Size
 
@@ -49,7 +61,7 @@ Public Class Analysis
         ' tempsplit2(paramcount) = tempsplit2(paramcount).Replace("_", " ")
         ' Next
         cmbOverlayDataX.Items.AddRange(tempsplit2)
-        tempstring = tempstring & "None"
+        tempstring = "(None)_" + tempstring
         tempsplit2 = Split(tempstring, "_")
         cmbOverlayDataY1.Items.AddRange(tempsplit2)
         cmbOverlayDataY2.Items.AddRange(tempsplit2)
@@ -66,6 +78,20 @@ Public Class Analysis
         cmbOverlayCorrectedSpeedUnits.SelectedIndex = 0
 
         pnlOverlaySetup()
+
+        With chartControl
+            .PicOverlayHeight = PicOverlayHeight
+            .PicOverlayWidth = PicOverlayWidth
+            .XOverlayStartFraction = XOverlayStartFraction
+            .XOverlayEndFraction = XOverlayEndFraction
+            .YOverlayStartFraction = YOverlayStartFraction
+            .YOverlayEndFraction = YOverlayEndFraction
+            .OverlayPlotMax = OverlayPlotMax
+            .OverlayFileCount = OverlayFileCount
+            .AnalyzedData = AnalyzedData
+            .xAxis = xAxis
+        End With
+
     End Sub
     Private Sub Analysis_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
         If e.CloseReason <> CloseReason.FormOwnerClosing Then
@@ -176,41 +202,51 @@ Public Class Analysis
             For FileCount = 1 To OverlayFileCount
                 XMaxDifference = 100000
                 For Counter = 1 To CInt(AnalyzedData(FileCount, Main.SESSIONTIME, 0)) 'OvPoints(FileCount)
-                    If AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, Counter) > xMax(FileCount) Then
-                        xMax(FileCount) = AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, Counter)
+                    Dim currentX As Double = AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, Counter)
+                    Dim currentY1 As Double = AnalyzedData(FileCount, cmbOverlayDataY1.SelectedIndex, Counter)
+                    Dim currentY2 As Double = AnalyzedData(FileCount, cmbOverlayDataY2.SelectedIndex, Counter)
+                    Dim currentY3 As Double = AnalyzedData(FileCount, cmbOverlayDataY3.SelectedIndex, Counter)
+                    Dim currentY4 As Double = AnalyzedData(FileCount, cmbOverlayDataY4.SelectedIndex, Counter)
+
+                    If currentX > xMax(FileCount) Then
+                        xMax(FileCount) = currentX
                         If xMax(FileCount) > xAxis Then
                             xAxis = xMax(FileCount)
                         End If
                     End If
                     'Check to see if we have passed the selected X value - this needs more work?
-                    If Math.Abs(AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, Counter) - OverlayXSelected) < XMaxDifference Then
-                        XMaxDifference = Math.Abs(AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, Counter) - OverlayXSelected)
+                    If Math.Abs(currentX - OverlayXSelected) < XMaxDifference Then
+                        XMaxDifference = Math.Abs(currentX - OverlayXSelected)
                         XMaxDifferencePointer(FileCount) = Counter
                     End If
-                    If AnalyzedData(FileCount, cmbOverlayDataY1.SelectedIndex, Counter) > y1Max(FileCount) Then
-                        y1Max(FileCount) = AnalyzedData(FileCount, cmbOverlayDataY1.SelectedIndex, Counter)
-                        y1MaxAtX(FileCount) = AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, Counter)
+
+                    If currentY1 > y1Max(FileCount) Then
+                        y1Max(FileCount) = currentY1
+                        y1MaxAtX(FileCount) = currentX
                         If y1Max(FileCount) > y1Axis Then
                             y1Axis = y1Max(FileCount)
                         End If
                     End If
-                    If AnalyzedData(FileCount, cmbOverlayDataY2.SelectedIndex, Counter) > y2Max(FileCount) Then
-                        y2Max(FileCount) = AnalyzedData(FileCount, cmbOverlayDataY2.SelectedIndex, Counter)
-                        y2MaxAtX(FileCount) = AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, Counter)
+
+                    If currentY2 > y2Max(FileCount) Then
+                        y2Max(FileCount) = currentY2
+                        y2MaxAtX(FileCount) = currentX
                         If y2Max(FileCount) > y2Axis Then
                             y2Axis = y2Max(FileCount)
                         End If
                     End If
-                    If AnalyzedData(FileCount, cmbOverlayDataY3.SelectedIndex, Counter) > y3Max(FileCount) Then
-                        y3Max(FileCount) = AnalyzedData(FileCount, cmbOverlayDataY3.SelectedIndex, Counter)
-                        y3MaxAtX(FileCount) = AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, Counter)
+
+                    If currentY3 > y3Max(FileCount) Then
+                        y3Max(FileCount) = currentY3
+                        y3MaxAtX(FileCount) = currentX
                         If y3Max(FileCount) > y3Axis Then
                             y3Axis = y3Max(FileCount)
                         End If
                     End If
-                    If AnalyzedData(FileCount, cmbOverlayDataY4.SelectedIndex, Counter) > y4Max(FileCount) Then
+
+                    If currentY4 > y4Max(FileCount) Then
                         y4Max(FileCount) = AnalyzedData(FileCount, cmbOverlayDataY4.SelectedIndex, Counter)
-                        y4MaxAtX(FileCount) = AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, Counter)
+                        y4MaxAtX(FileCount) = currentX
                         If y4Max(FileCount) > y4Axis Then
                             y4Axis = y4Max(FileCount)
                         End If
@@ -348,20 +384,26 @@ Public Class Analysis
 
                         Y1Pen.DashStyle = OverlayDashes(FileCount)
                         For Counter = 2 To EqualSpacingCount - 1
-                            .DrawLine(Y1Pen, CInt(XOverlayStartFraction * PicOverlayWidth + ((AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter)))) / xAxis) * (XOverlayEndFraction - XOverlayStartFraction) * PicOverlayWidth), CInt(YOverlayEndFraction * PicOverlayHeight - (AnalyzedData(FileCount, cmbOverlayDataY1.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter))) / y1Axis) * (YOverlayEndFraction - YOverlayStartFraction) * PicOverlayHeight), CInt(XOverlayStartFraction * PicOverlayWidth + ((AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter + 1)))) / xAxis) * (XOverlayEndFraction - XOverlayStartFraction) * PicOverlayWidth), CInt(YOverlayEndFraction * PicOverlayHeight - (AnalyzedData(FileCount, cmbOverlayDataY1.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter + 1))) / y1Axis) * (YOverlayEndFraction - YOverlayStartFraction) * PicOverlayHeight))
+                            Dim x1 As Integer = CInt(XOverlayStartFraction * PicOverlayWidth + ((AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter)))) / xAxis) * (XOverlayEndFraction - XOverlayStartFraction) * PicOverlayWidth)
+                            Dim x2 As Integer = CInt(XOverlayStartFraction * PicOverlayWidth + ((AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter + 1)))) / xAxis) * (XOverlayEndFraction - XOverlayStartFraction) * PicOverlayWidth)
+
+                            Dim y1 As Integer = CInt(YOverlayEndFraction * PicOverlayHeight - (AnalyzedData(FileCount, cmbOverlayDataY1.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter))) / y1Axis) * (YOverlayEndFraction - YOverlayStartFraction) * PicOverlayHeight)
+                            Dim y2 As Integer = CInt(YOverlayEndFraction * PicOverlayHeight - (AnalyzedData(FileCount, cmbOverlayDataY1.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter + 1))) / y1Axis) * (YOverlayEndFraction - YOverlayStartFraction) * PicOverlayHeight)
+
+                            .DrawLine(Y1Pen, x1, y1, x2, y2)
                         Next
                     Next
                 End If
 
-                    If cmbOverlayDataY2.SelectedIndex <> Main.LAST Then
-                        TickInterval = PicOverlayHeight * (YOverlayEndFraction - YOverlayStartFraction) * 1 / 5
-                        For Counter = 0 To 4
-                            TempString = Main.NewCustomFormat((((y2Axis) * Main.DataUnits(cmbOverlayDataY2.SelectedIndex, cmbOverlayUnitsY2.SelectedIndex)) / 5 * (5 - Counter)))
-                            .DrawLine(AxisPen, CInt(PicOverlayWidth * XOverlayStartFraction), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)), CInt(PicOverlayWidth * XOverlayStartFraction + TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)))
-                            .DrawString(TempString, AxisFont, AxisBrush, CInt(PicOverlayWidth * XOverlayStartFraction + TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter) - .MeasureString(TempString, AxisFont).Height / 2))
-                        Next
-                        TempString = Main.DataTags(cmbOverlayDataY2.SelectedIndex) & vbCrLf & "(" & Split(Main.DataUnitTags(cmbOverlayDataY2.SelectedIndex), " ")(cmbOverlayUnitsY2.SelectedIndex) & ")"
-                        .DrawString(TempString, Y2Font, Y2Brush, CInt(PicOverlayWidth * XOverlayStartFraction), CInt(PicOverlayHeight * YOverlayStartFraction - 5 - .MeasureString(TempString, Y2Font).Height)) ' * 1.5))
+                If cmbOverlayDataY2.SelectedIndex <> Main.LAST Then
+                    TickInterval = PicOverlayHeight * (YOverlayEndFraction - YOverlayStartFraction) * 1 / 5
+                    For Counter = 0 To 4
+                        TempString = Main.NewCustomFormat((((y2Axis) * Main.DataUnits(cmbOverlayDataY2.SelectedIndex, cmbOverlayUnitsY2.SelectedIndex)) / 5 * (5 - Counter)))
+                        .DrawLine(AxisPen, CInt(PicOverlayWidth * XOverlayStartFraction), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)), CInt(PicOverlayWidth * XOverlayStartFraction + TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)))
+                        .DrawString(TempString, AxisFont, AxisBrush, CInt(PicOverlayWidth * XOverlayStartFraction + TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter) - .MeasureString(TempString, AxisFont).Height / 2))
+                    Next
+                    TempString = Main.DataTags(cmbOverlayDataY2.SelectedIndex) & vbCrLf & "(" & Split(Main.DataUnitTags(cmbOverlayDataY2.SelectedIndex), " ")(cmbOverlayUnitsY2.SelectedIndex) & ")"
+                    .DrawString(TempString, Y2Font, Y2Brush, CInt(PicOverlayWidth * XOverlayStartFraction), CInt(PicOverlayHeight * YOverlayStartFraction - 5 - .MeasureString(TempString, Y2Font).Height)) ' * 1.5))
                     'If OverlayPlotMax Then
                     'TempString = "Max " & Main.DataTags(cmbOverlayDataY2.SelectedIndex)
                     '.DrawString(TempString, HeadingsFont, AxisBrush, Y2Column - .MeasureString(TempString, HeadingsFont).Width / 2, Titleline)
@@ -391,15 +433,15 @@ Public Class Analysis
                     Next
                 End If
 
-                    If cmbOverlayDataY3.SelectedIndex <> Main.LAST Then
-                        TickInterval = PicOverlayHeight * (YOverlayEndFraction - YOverlayStartFraction) * 1 / 5
-                        For Counter = 0 To 4
-                            TempString = Main.NewCustomFormat((((y3Axis) * Main.DataUnits(cmbOverlayDataY3.SelectedIndex, cmbOverlayUnitsY3.SelectedIndex)) / 5 * (5 - Counter)))
-                            .DrawLine(AxisPen, CInt(PicOverlayWidth * XOverlayEndFraction - TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)), CInt(PicOverlayWidth * XOverlayEndFraction), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)))
-                            .DrawString(TempString, AxisFont, AxisBrush, CInt(PicOverlayWidth * XOverlayEndFraction - TickLength - .MeasureString(TempString, AxisFont).Width), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter) - .MeasureString(TempString, AxisFont).Height / 2))
-                        Next
-                        TempString = Main.DataTags(cmbOverlayDataY3.SelectedIndex) & vbCrLf & "(" & Split(Main.DataUnitTags(cmbOverlayDataY3.SelectedIndex), " ")(cmbOverlayUnitsY3.SelectedIndex) & ")"
-                        .DrawString(TempString, Y3Font, Y3Brush, CInt(PicOverlayWidth * XOverlayEndFraction - .MeasureString(TempString, Y3Font).Width), CInt(PicOverlayHeight * YOverlayStartFraction - 5 - .MeasureString(TempString, Y3Font).Height)) '* 1.5))
+                If cmbOverlayDataY3.SelectedIndex <> Main.LAST Then
+                    TickInterval = PicOverlayHeight * (YOverlayEndFraction - YOverlayStartFraction) * 1 / 5
+                    For Counter = 0 To 4
+                        TempString = Main.NewCustomFormat((((y3Axis) * Main.DataUnits(cmbOverlayDataY3.SelectedIndex, cmbOverlayUnitsY3.SelectedIndex)) / 5 * (5 - Counter)))
+                        .DrawLine(AxisPen, CInt(PicOverlayWidth * XOverlayEndFraction - TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)), CInt(PicOverlayWidth * XOverlayEndFraction), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)))
+                        .DrawString(TempString, AxisFont, AxisBrush, CInt(PicOverlayWidth * XOverlayEndFraction - TickLength - .MeasureString(TempString, AxisFont).Width), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter) - .MeasureString(TempString, AxisFont).Height / 2))
+                    Next
+                    TempString = Main.DataTags(cmbOverlayDataY3.SelectedIndex) & vbCrLf & "(" & Split(Main.DataUnitTags(cmbOverlayDataY3.SelectedIndex), " ")(cmbOverlayUnitsY3.SelectedIndex) & ")"
+                    .DrawString(TempString, Y3Font, Y3Brush, CInt(PicOverlayWidth * XOverlayEndFraction - .MeasureString(TempString, Y3Font).Width), CInt(PicOverlayHeight * YOverlayStartFraction - 5 - .MeasureString(TempString, Y3Font).Height)) '* 1.5))
                     'If OverlayPlotMax Then
                     'TempString = "Max " & Main.DataTags(cmbOverlayDataY3.SelectedIndex)
                     '.DrawString(TempString, HeadingsFont, AxisBrush, Y3Column - .MeasureString(TempString, HeadingsFont).Width / 2, Titleline)
@@ -430,59 +472,65 @@ Public Class Analysis
                     Next
                 End If
 
-                    If cmbOverlayDataY4.SelectedIndex <> Main.LAST Then
-                        TickInterval = PicOverlayHeight * (YOverlayEndFraction - YOverlayStartFraction) * 1 / 5
-                        For Counter = 0 To 4
-                            TempString = Main.NewCustomFormat((((y4Axis) * Main.DataUnits(cmbOverlayDataY4.SelectedIndex, cmbOverlayUnitsY4.SelectedIndex)) / 5 * (5 - Counter)))
-                            .DrawLine(AxisPen, CInt(PicOverlayWidth * XOverlayEndFraction), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)), CInt(PicOverlayWidth * XOverlayEndFraction + TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)))
-                            .DrawString(TempString, AxisFont, AxisBrush, CInt(PicOverlayWidth * XOverlayEndFraction + TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter) - .MeasureString(TempString, AxisFont).Height / 2))
-                        Next
-                        TempString = Main.DataTags(cmbOverlayDataY4.SelectedIndex) & vbCrLf & "(" & Split(Main.DataUnitTags(cmbOverlayDataY4.SelectedIndex), " ")(cmbOverlayUnitsY4.SelectedIndex) & ")"
-                        .DrawString(TempString, Y4Font, Y4Brush, CInt(PicOverlayWidth * XOverlayEndFraction), CInt(PicOverlayHeight * YOverlayStartFraction - 5 - .MeasureString(TempString, Y4Font).Height)) ' * 1.5))
-                    'If OverlayPlotMax Then
-                    'TempString = "Max " & Main.DataTags(cmbOverlayDataY4.SelectedIndex)
+                If cmbOverlayDataY4.SelectedIndex <> Main.LAST Then
+
+                    chartControl.DrawOverlay(OverlayBMP, FileCount, AxisPen, AxisFont, AxisBrush, HeadingsFont, Y4Font, Y4Brush, Y4Pen, ResultsFont, y4Axis, Y4Column, y4Max, Titleline, UnitsLine,
+                                ResultsLine, y4MaxAtX, y4MaxAtSelectedX, OverlayDashes, EqualSpacingCount, EqualSpacingPointers, cmbOverlayDataY4.SelectedIndex, cmbOverlayUnitsY4.SelectedIndex,
+                                TickLength, cmbOverlayDataX.SelectedIndex, cmbOverlayUnitsX.SelectedIndex)
+
+
+                    'TickInterval = PicOverlayHeight * (YOverlayEndFraction - YOverlayStartFraction) * 1 / 5
+                    'For Counter = 0 To 4
+                    '    TempString = Main.NewCustomFormat((((y4Axis) * Main.DataUnits(cmbOverlayDataY4.SelectedIndex, cmbOverlayUnitsY4.SelectedIndex)) / 5 * (5 - Counter)))
+                    '    .DrawLine(AxisPen, CInt(PicOverlayWidth * XOverlayEndFraction), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)), CInt(PicOverlayWidth * XOverlayEndFraction + TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter)))
+                    '    .DrawString(TempString, AxisFont, AxisBrush, CInt(PicOverlayWidth * XOverlayEndFraction + TickLength), CInt(PicOverlayHeight * YOverlayStartFraction + (TickInterval * Counter) - .MeasureString(TempString, AxisFont).Height / 2))
+                    'Next
+                    'TempString = Main.DataTags(cmbOverlayDataY4.SelectedIndex) & vbCrLf & "(" & Split(Main.DataUnitTags(cmbOverlayDataY4.SelectedIndex), " ")(cmbOverlayUnitsY4.SelectedIndex) & ")"
+                    '.DrawString(TempString, Y4Font, Y4Brush, CInt(PicOverlayWidth * XOverlayEndFraction), CInt(PicOverlayHeight * YOverlayStartFraction - 5 - .MeasureString(TempString, Y4Font).Height)) ' * 1.5))
+                    ''If OverlayPlotMax Then
+                    ''TempString = "Max " & Main.DataTags(cmbOverlayDataY4.SelectedIndex)
+                    ''.DrawString(TempString, HeadingsFont, AxisBrush, Y4Column - .MeasureString(TempString, HeadingsFont).Width / 2, Titleline)
+                    ''Else
+                    'TempString = Main.DataTags(cmbOverlayDataY4.SelectedIndex)
                     '.DrawString(TempString, HeadingsFont, AxisBrush, Y4Column - .MeasureString(TempString, HeadingsFont).Width / 2, Titleline)
+                    ''End If
+                    'If OverlayPlotMax Then
+                    '    TempString = "Max (" & Split(Main.DataUnitTags(cmbOverlayDataY4.SelectedIndex), " ")(cmbOverlayUnitsY4.SelectedIndex) & ")"
                     'Else
-                    TempString = Main.DataTags(cmbOverlayDataY4.SelectedIndex)
-                    .DrawString(TempString, HeadingsFont, AxisBrush, Y4Column - .MeasureString(TempString, HeadingsFont).Width / 2, Titleline)
+                    '    TempString = "(" & Split(Main.DataUnitTags(cmbOverlayDataY4.SelectedIndex), " ")(cmbOverlayUnitsY4.SelectedIndex) & ")"
                     'End If
-                    If OverlayPlotMax Then
-                        TempString = "Max (" & Split(Main.DataUnitTags(cmbOverlayDataY4.SelectedIndex), " ")(cmbOverlayUnitsY4.SelectedIndex) & ")"
-                    Else
-                        TempString = "(" & Split(Main.DataUnitTags(cmbOverlayDataY4.SelectedIndex), " ")(cmbOverlayUnitsY4.SelectedIndex) & ")"
-                    End If
 
-                    .DrawString(TempString, HeadingsFont, AxisBrush, Y4Column - .MeasureString(TempString, HeadingsFont).Width / 2, UnitsLine)
-                    For FileCount = 1 To OverlayFileCount
-                        If OverlayPlotMax Then
-                            TempString = Main.NewCustomFormat(y4Max(FileCount) * Main.DataUnits(cmbOverlayDataY4.SelectedIndex, cmbOverlayUnitsY4.SelectedIndex)) & " @ " & Main.NewCustomFormat(y4MaxAtX(FileCount) * Main.DataUnits(cmbOverlayDataX.SelectedIndex, cmbOverlayUnitsX.SelectedIndex)) & " " & Split(Main.DataUnitTags(cmbOverlayDataX.SelectedIndex), " ")(cmbOverlayUnitsX.SelectedIndex)
-                            .DrawString(TempString, ResultsFont, AxisBrush, Y4Column - .MeasureString(TempString, ResultsFont).Width / 2, ResultsLine(FileCount))
-                        Else
-                            TempString = Main.NewCustomFormat(y4MaxAtSelectedX(FileCount) * Main.DataUnits(cmbOverlayDataY4.SelectedIndex, cmbOverlayUnitsY4.SelectedIndex)) ' & " @ " & Main.NewCustomFormat(OverlayXSelected * Main.DataUnits(cmbOverlayDataX.SelectedIndex, cmbOverlayUnitsX.SelectedIndex)) & " " & Split(Main.DataUnitTags(cmbOverlayDataX.SelectedIndex), " ")(cmbOverlayUnitsX.SelectedIndex)
-                            .DrawString(TempString, ResultsFont, AxisBrush, Y4Column - .MeasureString(TempString, ResultsFont).Width / 2, ResultsLine(FileCount))
-                        End If
+                    '.DrawString(TempString, HeadingsFont, AxisBrush, Y4Column - .MeasureString(TempString, HeadingsFont).Width / 2, UnitsLine)
+                    'For FileCount = 1 To OverlayFileCount
+                    '    If OverlayPlotMax Then
+                    '        TempString = Main.NewCustomFormat(y4Max(FileCount) * Main.DataUnits(cmbOverlayDataY4.SelectedIndex, cmbOverlayUnitsY4.SelectedIndex)) & " @ " & Main.NewCustomFormat(y4MaxAtX(FileCount) * Main.DataUnits(cmbOverlayDataX.SelectedIndex, cmbOverlayUnitsX.SelectedIndex)) & " " & Split(Main.DataUnitTags(cmbOverlayDataX.SelectedIndex), " ")(cmbOverlayUnitsX.SelectedIndex)
+                    '        .DrawString(TempString, ResultsFont, AxisBrush, Y4Column - .MeasureString(TempString, ResultsFont).Width / 2, ResultsLine(FileCount))
+                    '    Else
+                    '        TempString = Main.NewCustomFormat(y4MaxAtSelectedX(FileCount) * Main.DataUnits(cmbOverlayDataY4.SelectedIndex, cmbOverlayUnitsY4.SelectedIndex)) ' & " @ " & Main.NewCustomFormat(OverlayXSelected * Main.DataUnits(cmbOverlayDataX.SelectedIndex, cmbOverlayUnitsX.SelectedIndex)) & " " & Split(Main.DataUnitTags(cmbOverlayDataX.SelectedIndex), " ")(cmbOverlayUnitsX.SelectedIndex)
+                    '        .DrawString(TempString, ResultsFont, AxisBrush, Y4Column - .MeasureString(TempString, ResultsFont).Width / 2, ResultsLine(FileCount))
+                    '    End If
 
-                        Y4Pen.DashStyle = OverlayDashes(FileCount)
-                        For Counter = 2 To EqualSpacingCount - 1
-                            .DrawLine(Y4Pen, CInt(XOverlayStartFraction * PicOverlayWidth + ((AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter)))) / xAxis) * (XOverlayEndFraction - XOverlayStartFraction) * PicOverlayWidth), CInt(YOverlayEndFraction * PicOverlayHeight - (AnalyzedData(FileCount, cmbOverlayDataY4.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter))) / y4Axis) * (YOverlayEndFraction - YOverlayStartFraction) * PicOverlayHeight), CInt(XOverlayStartFraction * PicOverlayWidth + ((AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter + 1)))) / xAxis) * (XOverlayEndFraction - XOverlayStartFraction) * PicOverlayWidth), CInt(YOverlayEndFraction * PicOverlayHeight - (AnalyzedData(FileCount, cmbOverlayDataY4.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter + 1))) / y4Axis) * (YOverlayEndFraction - YOverlayStartFraction) * PicOverlayHeight))
-                        Next
-                    Next
+                    '    Y4Pen.DashStyle = OverlayDashes(FileCount)
+                    '    For Counter = 2 To EqualSpacingCount - 1
+                    '        .DrawLine(Y4Pen, CInt(XOverlayStartFraction * PicOverlayWidth + ((AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter)))) / xAxis) * (XOverlayEndFraction - XOverlayStartFraction) * PicOverlayWidth), CInt(YOverlayEndFraction * PicOverlayHeight - (AnalyzedData(FileCount, cmbOverlayDataY4.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter))) / y4Axis) * (YOverlayEndFraction - YOverlayStartFraction) * PicOverlayHeight), CInt(XOverlayStartFraction * PicOverlayWidth + ((AnalyzedData(FileCount, cmbOverlayDataX.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter + 1)))) / xAxis) * (XOverlayEndFraction - XOverlayStartFraction) * PicOverlayWidth), CInt(YOverlayEndFraction * PicOverlayHeight - (AnalyzedData(FileCount, cmbOverlayDataY4.SelectedIndex, CInt(EqualSpacingPointers(FileCount, Counter + 1))) / y4Axis) * (YOverlayEndFraction - YOverlayStartFraction) * PicOverlayHeight))
+                    '    Next
+                    'Next
                 End If
 
-                    'Hack Job for corrected speed
-                    TempString = "Max Corr. Speed" ' & DataTags(DRAG)
-                    .DrawString(TempString, HeadingsFont, AxisBrush, YDragColumn - .MeasureString(TempString, HeadingsFont).Width / 2, Titleline)
-                    TempString = "(" & Split(Main.DataUnitTags(Main.SPEED), " ")(cmbOverlayCorrectedSpeedUnits.SelectedIndex) & ")"
-                    .DrawString(TempString, HeadingsFont, AxisBrush, YDragColumn - .MeasureString(TempString, HeadingsFont).Width / 2, UnitsLine)
-                    For FileCount = 1 To OverlayFileCount
-                        DragCompare = Double.MaxValue
-                        Counter = 2
-                        Do
-                            Counter += 1
-                        Loop Until AnalyzedData(FileCount, Main.POWER, Counter) - AnalyzedData(FileCount, Main.DRAG, Counter) < 0 Or Counter = AnalyzedData(FileCount, Main.SESSIONTIME, 0)
-                        TempString = Main.NewCustomFormat(AnalyzedData(FileCount, Main.SPEED, Counter) * Main.DataUnits(Main.SPEED, cmbOverlayCorrectedSpeedUnits.SelectedIndex))  '& " @ " & NewCustomFormat(y4MaxAtX(FileCount) * DataUnits(cmbOverlayX.SelectedIndex, cmbOverlayXUnits.SelectedIndex)) & " " & Split(DataUnitTags(cmbOverlayX.SelectedIndex), " ")(cmbOverlayXUnits.SelectedIndex)
-                        .DrawString(TempString, ResultsFont, AxisBrush, YDragColumn - .MeasureString(TempString, ResultsFont).Width / 2, ResultsLine(FileCount))
-                    Next
+                'Hack Job for corrected speed
+                TempString = "Max Corr. Speed" ' & DataTags(DRAG)
+                .DrawString(TempString, HeadingsFont, AxisBrush, YDragColumn - .MeasureString(TempString, HeadingsFont).Width / 2, Titleline)
+                TempString = "(" & Split(Main.DataUnitTags(Main.SPEED), " ")(cmbOverlayCorrectedSpeedUnits.SelectedIndex) & ")"
+                .DrawString(TempString, HeadingsFont, AxisBrush, YDragColumn - .MeasureString(TempString, HeadingsFont).Width / 2, UnitsLine)
+                For FileCount = 1 To OverlayFileCount
+                    DragCompare = Double.MaxValue
+                    Counter = 2
+                    Do
+                        Counter += 1
+                    Loop Until AnalyzedData(FileCount, Main.POWER, Counter) - AnalyzedData(FileCount, Main.DRAG, Counter) < 0 Or Counter = AnalyzedData(FileCount, Main.SESSIONTIME, 0)
+                    TempString = Main.NewCustomFormat(AnalyzedData(FileCount, Main.SPEED, Counter) * Main.DataUnits(Main.SPEED, cmbOverlayCorrectedSpeedUnits.SelectedIndex))  '& " @ " & NewCustomFormat(y4MaxAtX(FileCount) * DataUnits(cmbOverlayX.SelectedIndex, cmbOverlayXUnits.SelectedIndex)) & " " & Split(DataUnitTags(cmbOverlayX.SelectedIndex), " ")(cmbOverlayXUnits.SelectedIndex)
+                    .DrawString(TempString, ResultsFont, AxisBrush, YDragColumn - .MeasureString(TempString, ResultsFont).Width / 2, ResultsLine(FileCount))
+                Next
 
             End With
 
@@ -491,285 +539,100 @@ Public Class Analysis
 
         End If
     End Sub
+
+
     Friend Sub btnAddOverlayFile_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnAddOverlayFile.Click
+        With OpenFileDialog1
+            .Reset()
+            .Filter = "Power Run files v6.3+ (*.sdp)|*.sdp|Power Run Files v5.5+ (*.txt)|*.txt"
+            If .ShowDialog() <> DialogResult.OK Then
+                Return
+            End If
+        End With
 
-        Dim temp As String, line() As String
-        Dim PointCount As Integer
-        Dim CopyFileName As String
-        Dim DataCopyfile As StreamWriter
+        Dim fileName As String = OpenFileDialog1.FileName
 
-        If Not e.Equals(System.EventArgs.Empty) Then
-            With OpenFileDialog1
-                .Reset()
-                .Filter = "Power Run files v6.3+ (*.sdp)|*.sdp|Power Run Files v5.5+ (*.txt)|*.txt"
-                .ShowDialog()
-            End With
-        End If
-        If OpenFileDialog1.FileName <> "" Then
-            DataInputFile = New System.IO.StreamReader(OpenFileDialog1.FileName)
-            With DataInputFile
-                temp = .ReadLine
-                Select Case temp
-                    Case Is = Main.PowerRunVersion, "POWER_RUN_6_3", "POWER_RUN_6_4" 'This is a valid current version file
-                        OverlayFileCount += 1
-                        If OverlayFileCount = MAXDATAFILES Then
-                            btnAddOverlayFile.Enabled = False
-                            Main.frmFit.chkAddOrNew.Checked = False
-                            Main.frmFit.chkAddOrNew.Enabled = False
-                        End If
-                        OverlayFiles(OverlayFileCount) = OpenFileDialog1.FileName.Substring(OpenFileDialog1.FileName.LastIndexOf("\") + 1)
-                        Do
-                            temp = .ReadLine
-                        Loop Until temp.StartsWith("NUMBER_OF_POINTS_FIT")
-                        AnalyzedData(OverlayFileCount, Main.SESSIONTIME, 0) = CDbl(temp.Substring(temp.LastIndexOf(" "))) 'used the empty holder to remember the number of fit points
-                        temp = .ReadLine 'starting
+        Dim dataInputFileReader As DataInputFileReader = New DataInputFileReader()
 
-                        Dim ColumnTitles As String
-                        Dim TitlesSplit As String()
-                        Dim SearchString As String
-                        Dim DataLine As String()
-                        Dim UnitName As String()
-                        Dim ParamCount As Integer
-                        Dim ParamPosition As Integer
+        Main.SetMouseBusy_ThreadSafe(Me)
 
-                        ColumnTitles = .ReadLine 'titles
-                        TitlesSplit = Split(ColumnTitles, " ")
+        Dim dataRecords As List(Of DataRecord)
+        With dataInputFileReader
+            .ReadDataFile(fileName)
+            dataRecords = .ReadDataFile2(fileName)
+            OverlayFileCount = .OverlayFileCount
+            OverlayFiles = .OverlayFiles
+            AnalyzedData = .AnalyzedData
+        End With
 
-                        For PointCount = 1 To CInt(AnalyzedData(OverlayFileCount, Main.SESSIONTIME, 0))
-                            DataLine = Split(.ReadLine, " ") 'reads all the values on this line into a string array
-                            For ParamCount = 0 To Main.LAST - 1
-                                'This is how the titles are created in the fitting code except we do not add the space
-                                UnitName = Split(Main.DataUnitTags(ParamCount), " ")
-                                SearchString = Main.DataTags(ParamCount).Replace(" ", "_") & "_(" & UnitName(0) & ")"
-                                ParamPosition = Array.IndexOf(TitlesSplit, SearchString)
-                                If ParamPosition <> -1 Then
-                                    AnalyzedData(OverlayFileCount, ParamCount, PointCount) = CDbl(DataLine(ParamPosition))
-                                End If
-                            Next
-                        Next
-                    Case Is = "POWER_CURVE_6_0" ' These were the earlier beta testing versions for uno
-                        'There are a number of different versions carrying this heading
-                        'Main differences between these and 6.3+ versions are no "_" between parameter and unit and Watts in was called Watts_(e)
-                        MsgBox("A copy of " & OpenFileDialog1.FileName & " will be saved as a new version .sdp file.", vbOKOnly)
-                        'Convert old data to new data
-                        'open the copy file
-                        Main.SetMouseBusy_ThreadSafe(Me)
-                        CopyFileName = OpenFileDialog1.FileName.Substring(0, OpenFileDialog1.FileName.Length - 4) & ".sdp"
-                        DataCopyfile = New System.IO.StreamWriter(CopyFileName)
-                        DataCopyfile.WriteLine(Main.PowerRunVersion)
-                        DataCopyfile.WriteLine(CopyFileName)
-                        'load it up as if it were a version 6 file
-                        OverlayFileCount += 1
-                        If OverlayFileCount = MAXDATAFILES Then
-                            btnAddOverlayFile.Enabled = False
-                            Main.frmFit.chkAddOrNew.Checked = False
-                            Main.frmFit.chkAddOrNew.Enabled = False
-                        End If
-                        OverlayFiles(OverlayFileCount) = CopyFileName.Substring(CopyFileName.LastIndexOf("\") + 1)
-                        'Now read through the lines and copy them to the new file
-                        Dim temprollerdiameter As Double
-                        Dim tempwheeldiameter As Double
-                        Dim tempgearratio As Double
-                        temp = .ReadLine 'original file name line
-                        Do
-                            temp = .ReadLine
-                            DataCopyfile.WriteLine(temp)
-                            'while we are at it - look for roller dia, wheel dia and gear ratio
-                            If temp.LastIndexOf(" ") <> -1 Then
-                                'Debug.Print(temp & temp.LastIndexOf(" "))
-                                If temp.Split(CChar(" "))(1) = "Gear_Ratio:" Then tempgearratio = CDbl(temp.Split(CChar(" "))(2))
-                                If temp.Split(CChar(" "))(1) = "Wheel_Diameter:" Then tempwheeldiameter = CDbl(temp.Split(CChar(" "))(2))
-                                If temp.Split(CChar(" "))(1) = "Roller_Diameter:" Then temprollerdiameter = CDbl(temp.Split(CChar(" "))(2))
-                            End If
-                            'Loop Until temp.LastIndexOf("Target_Roller_Mass") <> -1 'this takes us to the end of the old headings
-                        Loop Until temp = "PRIMARY_CHANNEL_CURVE_FIT_DATA"
-                        'line that holds the number of datapoints
-                        temp = .ReadLine : DataCopyfile.WriteLine(temp)
-                        AnalyzedData(OverlayFileCount, Main.SESSIONTIME, 0) = CDbl(temp.Substring(temp.LastIndexOf(" ")))
-                        'line that holds the starting point
-                        temp = .ReadLine : DataCopyfile.WriteLine(temp)
 
-                        Dim ColumnTitles As String
-                        Dim TitlesSplit As String()
-                        Dim SearchString As String
-                        Dim DataLine As String()
-                        Dim UnitName As String()
-                        Dim ParamCount As Integer
-                        Dim ParamPosition As Integer
+        Dim plotModel As OxyPlot.PlotModel = New OxyPlot.PlotModel() With {
+            .Background = OxyColors.White,
+            .Title = fileName,
+            .IsLegendVisible = True
+        }
 
-                        ColumnTitles = .ReadLine 'titles
-                        'now depending on the title line, difference approaches are required.
-                        'First substitute the "Watts_(e)" string to the current "Watts In" string including the splitter "_"
-                        If ColumnTitles.Contains("Point") AndAlso ColumnTitles.Contains("SystemTime") Then 'this is an early beta version.
-                            For PointCount = 1 To CInt(AnalyzedData(OverlayFileCount, Main.SESSIONTIME, 0))
-                                temp = .ReadLine
-                                line = temp.Split(CChar(" "))
-                                AnalyzedData(OverlayFileCount, Main.SESSIONTIME, PointCount) = CDbl(line(1))
-                                AnalyzedData(OverlayFileCount, Main.RPM1_ROLLER, PointCount) = CDbl(line(6)) ' / Main.DataUnits(Main.RPM1_ROLLER, 1) 'convert old RPM to new rad/s
-                                AnalyzedData(OverlayFileCount, Main.RPM1_WHEEL, PointCount) = CDbl(line(7)) '/ Main.DataUnits(Main.RPM1_ROLLER, 1) 'convert old RPM to new rad/s
-                                AnalyzedData(OverlayFileCount, Main.RPM1_MOTOR, PointCount) = CDbl(line(8)) ' / Main.DataUnits(Main.RPM1_ROLLER, 1) 'convert old RPM to new rad/s
-                                AnalyzedData(OverlayFileCount, Main.RPM2, PointCount) = CDbl(line(10))
-                                AnalyzedData(OverlayFileCount, Main.RPM2_RATIO, PointCount) = CDbl(line(11))
-                                AnalyzedData(OverlayFileCount, Main.RPM2_ROLLOUT, PointCount) = CDbl(line(12))
-                                AnalyzedData(OverlayFileCount, Main.SPEED, PointCount) = CDbl(line(15)) '/ Main.DataUnits(Main.SPEED, 1) 'convert old MPH to new m/s
-                                AnalyzedData(OverlayFileCount, Main.TORQUE_ROLLER, PointCount) = CDbl(line(18)) 'already in N.m
-                                AnalyzedData(OverlayFileCount, Main.TORQUE_WHEEL, PointCount) = CDbl(line(19)) 'AnalyzedData(OverlayFileCount, Main.POWER, PointCount) * (tempwheeldiameter / temprollerdiameter)
-                                AnalyzedData(OverlayFileCount, Main.TORQUE_MOTOR, PointCount) = CDbl(line(20)) 'AnalyzedData(OverlayFileCount, Main.TORQUE_WHEEL, PointCount) / tempgearratio
-                                AnalyzedData(OverlayFileCount, Main.POWER, PointCount) = CDbl(line(30))
-                                AnalyzedData(OverlayFileCount, Main.DRAG, PointCount) = CDbl(line(33))
-                                AnalyzedData(OverlayFileCount, Main.VOLTS, PointCount) = CDbl(line(36))
-                                AnalyzedData(OverlayFileCount, Main.AMPS, PointCount) = CDbl(line(39))
-                                AnalyzedData(OverlayFileCount, Main.WATTS_IN, PointCount) = CDbl(line(40))
-                                AnalyzedData(OverlayFileCount, Main.EFFICIENCY, PointCount) = CDbl(line(42))
-                                AnalyzedData(OverlayFileCount, Main.TEMPERATURE1, PointCount) = CDbl(line(43))
-                                'Everything else is going to be '0'
-                            Next
-                        Else 'It looks more like the current version, but not quite.
-                            ColumnTitles = ColumnTitles.Replace("Watts_(e)", "Watts_In")
-                            'No replace all "(" at the beginning of the units with "_("
-                            ColumnTitles = ColumnTitles.Replace("(", "_(")
 
-                            TitlesSplit = Split(ColumnTitles, " ")
+        Me.PlotView1.Model = plotModel
 
-                            For PointCount = 1 To CInt(AnalyzedData(OverlayFileCount, Main.SESSIONTIME, 0))
-                                DataLine = Split(.ReadLine, " ") 'reads all the values on this line into a string array
-                                For ParamCount = 0 To Main.LAST - 1
-                                    'This is how the titles are created in the fitting code except we do not add the space
-                                    UnitName = Split(Main.DataUnitTags(ParamCount), " ")
-                                    SearchString = Main.DataTags(ParamCount).Replace(" ", "_") & "_(" & UnitName(0) & ")"
-                                    ParamPosition = Array.IndexOf(TitlesSplit, SearchString)
-                                    If ParamPosition <> -1 Then
-                                        AnalyzedData(OverlayFileCount, ParamCount, PointCount) = CDbl(DataLine(ParamPosition))
-                                    End If
-                                Next
-                            Next
-                        End If
-                        'Now write all of the analyzed data to the datacopy file as if it were a power run
-                        'write the new heading line
-                        Dim tempstring As String = ""
-                        Dim tempsplit As String()
-                        For ParamCount = 0 To Main.LAST - 1
-                            tempsplit = Split(Main.DataUnitTags(ParamCount), " ")
-                            tempstring = tempstring & Main.DataTags(ParamCount).Replace(" ", "_") & "_(" & tempsplit(0) & ") "
-                        Next
-                        'Write the column headings
-                        DataCopyfile.WriteLine(tempstring)
-                        'now write out the new file format
-                        For PointCount = 1 To CInt(AnalyzedData(OverlayFileCount, Main.SESSIONTIME, 0))
-                            tempstring = "" 'count.ToString & " "
-                            For ParamCount = 0 To Main.LAST - 1 'CHECK - time is now the last column which will mess up the overlay routine .
-                                tempsplit = Split(Main.DataUnitTags(ParamCount), " ") ' How many units are there
-                                tempstring = tempstring & AnalyzedData(OverlayFileCount, ParamCount, PointCount) * Main.DataUnits(ParamCount, 0) & " " 'DataTags(paramcount).Replace(" ", "_") & "(" & tempsplit(unitcount) & ") "
-                            Next
-                            '...and write it
-                            DataCopyfile.WriteLine(tempstring)
-                        Next
-                        DataCopyfile.WriteLine(vbCrLf)
-                        Do Until .EndOfStream
-                            temp = .ReadLine
-                            DataCopyfile.WriteLine(temp)
-                        Loop
-                        DataCopyfile.Close()
-                        Main.SetMouseNormal_ThreadSafe(Me)
-                    Case Is = "POWER_CURVE" 'We are assuming that this is a SD 5.5 Power Run File.
-                        MsgBox("A copy of " & OpenFileDialog1.FileName & " will be saved as a new version .sdp file.", vbOKOnly)
-                        'Convert old data to new data
-                        'open the copy file
-                        Main.SetMouseBusy_ThreadSafe(Me)
-                        CopyFileName = OpenFileDialog1.FileName.Substring(0, OpenFileDialog1.FileName.Length - 4) & ".sdp"
-                        DataCopyfile = New System.IO.StreamWriter(CopyFileName)
-                        DataCopyfile.WriteLine(Main.PowerRunVersion)
-                        DataCopyfile.WriteLine(CopyFileName)
-                        'load it up as if it were a version 6 file
-                        OverlayFileCount += 1
-                        If OverlayFileCount = MAXDATAFILES Then
-                            btnAddOverlayFile.Enabled = False
-                            Main.frmFit.chkAddOrNew.Checked = False
-                            Main.frmFit.chkAddOrNew.Enabled = False
-                        End If
-                        OverlayFiles(OverlayFileCount) = CopyFileName.Substring(CopyFileName.LastIndexOf("\") + 1)
-                        'Now read through the lines and copy them to the new file
-                        Dim temprollerdiameter As Double
-                        Dim tempwheeldiameter As Double
-                        Dim tempgearratio As Double
-                        temp = .ReadLine 'original file name line
-                        Do
-                            temp = .ReadLine
-                            DataCopyfile.WriteLine(temp)
-                            'while we are at it - look for roller dia, wheel dia and gear ratio
-                            If temp.LastIndexOf(" ") <> -1 Then
-                                'Debug.Print(temp & temp.LastIndexOf(" "))
-                                If temp.Split(CChar(" "))(1) = "Gear_Ratio:" Then tempgearratio = CDbl(temp.Split(CChar(" "))(2))
-                                If temp.Split(CChar(" "))(1) = "Wheel_Diameter:" Then tempwheeldiameter = CDbl(temp.Split(CChar(" "))(2))
-                                If temp.Split(CChar(" "))(1) = "Roller_Diameter:" Then temprollerdiameter = CDbl(temp.Split(CChar(" "))(2))
-                            End If
-                            'Loop Until temp.LastIndexOf("Target_Roller_Mass") <> -1 'this takes us to the end of the old headings
-                        Loop Until temp = "PRIMARY_CHANNEL_CURVE_FIT_DATA"
-                        'line that holds the number of datapoints
-                        temp = .ReadLine : DataCopyfile.WriteLine(temp)
-                        AnalyzedData(OverlayFileCount, Main.SESSIONTIME, 0) = CDbl(temp.Substring(temp.LastIndexOf(" ")))
-                        'line that holds the starting point
-                        temp = .ReadLine : DataCopyfile.WriteLine(temp)
-                        'next is the original heading line which we will discard
-                        temp = .ReadLine
-                        'write the new heading line
-                        Dim tempstring As String = ""
-                        Dim tempsplit As String()
-                        Dim paramcount As Integer
-                        For paramcount = 0 To Main.LAST - 1
-                            tempsplit = Split(Main.DataUnitTags(paramcount), " ")
-                            tempstring = tempstring & Main.DataTags(paramcount).Replace(" ", "_") & "_(" & tempsplit(0) & ") "
-                        Next
-                        'Write the column headings
-                        DataCopyfile.WriteLine(tempstring)
-                        'now read in all of the fit data 
-                        For PointCount = 1 To CInt(AnalyzedData(OverlayFileCount, Main.SESSIONTIME, 0))
-                            temp = .ReadLine
-                            line = temp.Split(CChar(" "))
-                            'This is the old line format
-                            'Point Time RollerRPM WheelRPM MotorRPM SpeedMPH SpeedKPH PowerWatts PowerHP TorqueNm Torqueinoz Torquecmg DragWatts DragHP
-                            '   1    2     3         4         5        6       7         8         9       10          11       12       13        14
-                            'This is the new line format
-                            'Time(Sec) RPM1_Roller(rad/s) RPM1_Wheel(rad/s) RPM1_Motor(rad/s) Speed(m/s) RPM2(rad/s) Ratio(M/W) Rollout(mm) Roller_Torque(N.m) Wheel_Torque(N.m) Motor_Torque(N.m) Power(W) Drag(W) Voltage(V) Current(A) Watts_(e)(W) Efficiency(%) Temperature(°C) 
-                            'So...
-                            AnalyzedData(OverlayFileCount, Main.SESSIONTIME, PointCount) = CDbl(line(1))
-                            AnalyzedData(OverlayFileCount, Main.RPM1_ROLLER, PointCount) = CDbl(line(2)) / Main.DataUnits(Main.RPM1_ROLLER, 1) 'convert old RPM to new rad/s
-                            AnalyzedData(OverlayFileCount, Main.RPM1_WHEEL, PointCount) = CDbl(line(3)) / Main.DataUnits(Main.RPM1_ROLLER, 1) 'convert old RPM to new rad/s
-                            AnalyzedData(OverlayFileCount, Main.RPM1_MOTOR, PointCount) = CDbl(line(4)) / Main.DataUnits(Main.RPM1_ROLLER, 1) 'convert old RPM to new rad/s
-                            AnalyzedData(OverlayFileCount, Main.SPEED, PointCount) = CDbl(line(5)) / Main.DataUnits(Main.SPEED, 1) 'convert old MPH to new m/s
-                            AnalyzedData(OverlayFileCount, Main.TORQUE_ROLLER, PointCount) = CDbl(line(9)) 'already in N.m
-                            AnalyzedData(OverlayFileCount, Main.POWER, PointCount) = CDbl(line(7))
-                            AnalyzedData(OverlayFileCount, Main.DRAG, PointCount) = CDbl(line(12))
-                            'recalc the motor and wheel torques
-                            AnalyzedData(OverlayFileCount, Main.TORQUE_WHEEL, PointCount) = AnalyzedData(OverlayFileCount, Main.POWER, PointCount) * (tempwheeldiameter / temprollerdiameter)
-                            AnalyzedData(OverlayFileCount, Main.TORQUE_MOTOR, PointCount) = AnalyzedData(OverlayFileCount, Main.TORQUE_WHEEL, PointCount) / tempgearratio
-                            'Everything else is going to be '0'
-                        Next
-                        'now write out the new file format
-                        For PointCount = 1 To CInt(AnalyzedData(OverlayFileCount, Main.SESSIONTIME, 0))
-                            tempstring = "" 'count.ToString & " "
-                            For paramcount = 0 To Main.LAST - 1 'CHECK - time is now the last column which will mess up the overlay routine .
-                                tempsplit = Split(Main.DataUnitTags(paramcount), " ") ' How many units are there
-                                tempstring = tempstring & AnalyzedData(OverlayFileCount, paramcount, PointCount) * Main.DataUnits(paramcount, 0) & " " 'DataTags(paramcount).Replace(" ", "_") & "(" & tempsplit(unitcount) & ") "
-                            Next
-                            '...and write it
-                            DataCopyfile.WriteLine(tempstring)
-                        Next
-                        DataCopyfile.WriteLine(vbCrLf)
-                        Do Until .EndOfStream
-                            temp = .ReadLine
-                            DataCopyfile.WriteLine(temp)
-                        Loop
-                        DataCopyfile.Close()
-                        Main.SetMouseNormal_ThreadSafe(Me)
-                    Case Else
-                        MsgBox("Could not open file.  If this is a Power Run created by an older SimpleDyno version please email it to damorc1@hotmail.com so that a fix can be made available", vbOKOnly)
-                End Select
-            End With
-            DataInputFile.Close()
-        End If
-        pnlOverlaySetup()
+
+        plotModel.Axes.Add(New LinearAxis() With {
+                       .Key = "rpm",
+                       .Position = OxyPlot.Axes.AxisPosition.Bottom,
+                       .Title = "Rpm",
+                       .MajorGridlineStyle = LineStyle.Solid
+                       })
+
+        plotModel.Axes.Add(New LinearAxis() With {
+                        .Key = "hp",
+                        .Position = OxyPlot.Axes.AxisPosition.Left,
+                        .Title = "Power",
+                        .MajorGridlineStyle = LineStyle.Solid,
+                        .MajorStep = 1, .Unit = "HP"
+                        })
+
+        plotModel.Axes.Add(New LinearAxis() With {
+                           .Key = "torque",
+                           .Position = OxyPlot.Axes.AxisPosition.Right,
+                           .Title = "Torque",
+                           .MajorGridlineStyle = LineStyle.Dash,
+                           .MajorStep = 1, .Unit = "Nm"
+                           })
+
+        Dim hplineSeries As New OxyPlot.Series.LineSeries With {
+            .YAxisKey = "hp",
+            .Color = OxyColors.Blue,
+            .Title = "HP"
+        }
+
+        Dim torqueLineSeries As New OxyPlot.Series.LineSeries With {
+            .YAxisKey = "torque",
+            .Color = OxyColors.Red,
+            .Title = "Torque"
+        }
+
+
+        plotModel.Series.Add(hplineSeries)
+        plotModel.Series.Add(torqueLineSeries)
+
+        For Each dataRecord As DataRecord In dataRecords
+            Dim power As Double = dataRecord.Power * 0.00134102209
+            Dim rpm As Integer = CInt(dataRecord.RPM1_Motor * (60 / (2 * Math.PI)))
+            Dim torque As Double = dataRecord.Motor_Torque
+
+
+            hplineSeries.Points.Add(New OxyPlot.DataPoint(rpm, power))
+            torqueLineSeries.Points.Add(New OxyPlot.DataPoint(rpm, torque))
+
+        Next
+
+
+
+        Main.SetMouseNormal_ThreadSafe(Me)
+
+        'pnlOverlaySetup()
     End Sub
+
     Friend Sub btnClearOverlay_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnClearOverlay.Click
         ReDim AnalyzedData(MAXDATAFILES, Main.LAST, Main.MAXDATAPOINTS)
         OverlayFileCount = 0
@@ -863,9 +726,7 @@ Public Class Analysis
     Private Sub cmbOverlayCorrectedSpeedUnits_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayCorrectedSpeedUnits.SelectedIndexChanged
         pnlOverlaySetup()
     End Sub
-    'CHECK IF YOU WANT TO PULL ALL DECLARATIONS TO THE TOP
-    Private OverlayXSelected As Double
-    Private OverlayPlotMax As Boolean = True
+
     Private Sub pnlDataOverlay_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles pnlDataOverlay.Click
         pnlOverlaySetup()
     End Sub
