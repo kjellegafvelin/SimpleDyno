@@ -544,37 +544,44 @@ Public Class AnalysisForm
 
 
     Friend Sub btnAddOverlayFile_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnAddOverlayFile.Click
+
+        ' Dirty trick here to open file from the Fit form
         If Not e.Equals(System.EventArgs.Empty) Then
             With OpenFileDialog1
                 .Reset()
                 .Filter = "Power Run files v6.3+ (*.sdp)|*.sdp|Power Run Files v5.5+ (*.txt)|*.txt"
+                .Multiselect = True
                 If .ShowDialog() <> DialogResult.OK Then
                     Return
                 End If
             End With
         End If
 
-        Dim fileName As String = OpenFileDialog1.FileName
-
         Dim dataInputFileReader As DataInputFileReader = New DataInputFileReader()
 
-        Main.SetMouseBusy_ThreadSafe(Me)
+        Dim index As Integer
+        For index = 0 To OpenFileDialog1.FileNames.Length - 1
 
-        Dim dataRecords As List(Of DataRecord)
-        With dataInputFileReader
-            .ReadDataFile(fileName)
-            dataRecords = .ReadDataFile2(fileName)
-            OverlayFileCount = .OverlayFileCount
-            OverlayFiles = .OverlayFiles
-            AnalyzedData = .AnalyzedData
-        End With
+            Dim fileName As String = OpenFileDialog1.FileNames.GetValue(index).ToString()
 
-        clbFiles.Items.Add(Path.GetFileNameWithoutExtension(fileName), True)
-        Me.dataRecordsList.Add(dataRecords)
+            Main.SetMouseBusy_ThreadSafe(Me)
+
+            Dim dataRecords As List(Of DataRecord)
+            With dataInputFileReader
+                '.ReadDataFile(fileName)
+                dataRecords = .ReadDataFile2(fileName)
+                OverlayFileCount = .OverlayFileCount
+                OverlayFiles = .OverlayFiles
+                AnalyzedData = .AnalyzedData
+            End With
+
+            clbFiles.Items.Add(Path.GetFileNameWithoutExtension(fileName), clbFiles.CheckedItems.Count < 5)
+            Me.dataRecordsList.Add(dataRecords)
+        Next
 
         SetupDiagram()
 
-        btnAddOverlayFile.Enabled = dataRecordsList.Count < 5
+        'btnAddOverlayFile.Enabled = dataRecordsList.Count < 5
 
         Main.SetMouseNormal_ThreadSafe(Me)
 
@@ -623,38 +630,54 @@ Public Class AnalysisForm
 
         Me.SuspendLayout()
 
-        lblFile1.Text = ""
-        lblFile2.Text = ""
-        lblFile3.Text = ""
-        lblFile4.Text = ""
-        lblFile5.Text = ""
-        lblXMax1.Text = ""
-        lblY1Max1.Text = ""
-        lblY2Max1.Text = ""
-        lblY3Max1.Text = ""
-        lblY4Max1.Text = ""
-        lblXMax2.Text = ""
-        lblY1Max2.Text = ""
-        lblY2Max2.Text = ""
-        lblY3Max2.Text = ""
-        lblY4Max2.Text = ""
-        lblXMax3.Text = ""
-        lblY1Max3.Text = ""
-        lblY2Max3.Text = ""
-        lblY3Max3.Text = ""
-        lblY4Max3.Text = ""
-        lblXMax4.Text = ""
-        lblY1Max4.Text = ""
-        lblY2Max4.Text = ""
-        lblY3Max4.Text = ""
-        lblY4Max4.Text = ""
-        lblXMax5.Text = ""
-        lblY1Max5.Text = ""
-        lblY2Max5.Text = ""
-        lblY3Max5.Text = ""
-        lblY4Max5.Text = ""
-
         y1Index = Math.Max(cmbOverlayDataY1.SelectedIndex, 0)
+        y2Index = Math.Max(cmbOverlayDataY2.SelectedIndex, 0)
+        y3Index = Math.Max(cmbOverlayDataY3.SelectedIndex, 0)
+        y4Index = Math.Max(cmbOverlayDataY4.SelectedIndex, 0)
+
+        lblFile1.Visible = clbFiles.CheckedItems.Count > 0
+        lblFile2.Visible = clbFiles.CheckedItems.Count > 1
+        lblFile3.Visible = clbFiles.CheckedItems.Count > 2
+        lblFile4.Visible = clbFiles.CheckedItems.Count > 3
+        lblFile5.Visible = clbFiles.CheckedItems.Count > 4
+        lblXMax1.Visible = clbFiles.CheckedItems.Count > 0
+        lblXMax2.Visible = clbFiles.CheckedItems.Count > 1
+        lblXMax3.Visible = clbFiles.CheckedItems.Count > 2
+        lblXMax4.Visible = clbFiles.CheckedItems.Count > 3
+        lblXMax5.Visible = clbFiles.CheckedItems.Count > 4
+
+        lblY1Title.Visible = y1Index < Main.LAST
+        lblY1Unit.Visible = y1Index < Main.LAST
+        lblY1Max1.Visible = clbFiles.CheckedItems.Count > 0 And y1Index < Main.LAST
+        lblY1Max2.Visible = clbFiles.CheckedItems.Count > 1 And y1Index < Main.LAST
+        lblY1Max3.Visible = clbFiles.CheckedItems.Count > 2 And y1Index < Main.LAST
+        lblY1Max4.Visible = clbFiles.CheckedItems.Count > 3 And y1Index < Main.LAST
+        lblY1Max5.Visible = clbFiles.CheckedItems.Count > 4 And y1Index < Main.LAST
+
+        lblY2Title.Visible = y2Index < Main.LAST
+        lblY2Unit.Visible = y2Index < Main.LAST
+        lblY2Max1.Visible = clbFiles.CheckedItems.Count > 0 And y2Index < Main.LAST
+        lblY2Max2.Visible = clbFiles.CheckedItems.Count > 1 And y2Index < Main.LAST
+        lblY2Max3.Visible = clbFiles.CheckedItems.Count > 2 And y2Index < Main.LAST
+        lblY2Max4.Visible = clbFiles.CheckedItems.Count > 3 And y2Index < Main.LAST
+        lblY2Max5.Visible = clbFiles.CheckedItems.Count > 4 And y2Index < Main.LAST
+
+        lblY3Title.Visible = y3Index < Main.LAST
+        lblY3Unit.Visible = y3Index < Main.LAST
+        lblY3Max1.Visible = clbFiles.CheckedItems.Count > 0 And y3Index < Main.LAST
+        lblY3Max2.Visible = clbFiles.CheckedItems.Count > 1 And y3Index < Main.LAST
+        lblY3Max3.Visible = clbFiles.CheckedItems.Count > 2 And y3Index < Main.LAST
+        lblY3Max4.Visible = clbFiles.CheckedItems.Count > 3 And y3Index < Main.LAST
+        lblY3Max5.Visible = clbFiles.CheckedItems.Count > 4 And y3Index < Main.LAST
+
+        lblY4Title.Visible = y4Index < Main.LAST
+        lblY4Unit.Visible = y4Index < Main.LAST
+        lblY4Max1.Visible = clbFiles.CheckedItems.Count > 0 And y4Index < Main.LAST
+        lblY4Max2.Visible = clbFiles.CheckedItems.Count > 1 And y4Index < Main.LAST
+        lblY4Max3.Visible = clbFiles.CheckedItems.Count > 2 And y4Index < Main.LAST
+        lblY4Max4.Visible = clbFiles.CheckedItems.Count > 3 And y4Index < Main.LAST
+        lblY4Max5.Visible = clbFiles.CheckedItems.Count > 4 And y4Index < Main.LAST
+
         y1UnitsIndex = Math.Max(cmbOverlayUnitsY1.SelectedIndex, 0)
         If (y1Index < Main.LAST) Then
             y1AxisUnit = Main.DataUnitTags(y1Index).Split(CType(" ", Char()))(y1UnitsIndex)
@@ -663,7 +686,6 @@ Public Class AnalysisForm
             lblY1Unit.Text = "Max (" & y1AxisUnit & ")"
         End If
 
-        y2Index = Math.Max(cmbOverlayDataY2.SelectedIndex, 0)
         y2UnitsIndex = Math.Max(cmbOverlayUnitsY2.SelectedIndex, 0)
         If (y2Index < Main.LAST) Then
             y2AxisUnit = Main.DataUnitTags(y2Index).Split(CType(" ", Char()))(y2UnitsIndex)
@@ -672,7 +694,6 @@ Public Class AnalysisForm
             lblY2Unit.Text = "Max (" & y2AxisUnit & ")"
         End If
 
-        y3Index = Math.Max(cmbOverlayDataY3.SelectedIndex, 0)
         y3UnitsIndex = Math.Max(cmbOverlayUnitsY3.SelectedIndex, 0)
         If (y3Index < Main.LAST) Then
             y3AxisUnit = Main.DataUnitTags(y3Index).Split(CType(" ", Char()))(y3UnitsIndex)
@@ -681,7 +702,6 @@ Public Class AnalysisForm
             lblY3Unit.Text = "Max (" & y3AxisUnit & ")"
         End If
 
-        y4Index = Math.Max(cmbOverlayDataY4.SelectedIndex, 0)
         y4UnitsIndex = Math.Max(cmbOverlayUnitsY4.SelectedIndex, 0)
         If (y4Index < Main.LAST) Then
             y4AxisUnit = Main.DataUnitTags(y4Index).Split(CType(" ", Char()))(y4UnitsIndex)
@@ -745,7 +765,7 @@ Public Class AnalysisForm
         Dim lineStyles As LineStyle() = {LineStyle.Solid, LineStyle.Dash, LineStyle.LongDash, LineStyle.DashDot, LineStyle.LongDashDot}
 
 
-
+        Dim row As Integer = 0
         For i = 0 To dataRecordsList.Count - 1
 
             If (clbFiles.CheckedIndices.Contains(i) = False) Then
@@ -757,7 +777,7 @@ Public Class AnalysisForm
 
                 lineSeries1 = New OxyPlot.Series.LineSeries With {
                     .YAxisKey = "y1",
-                    .LineStyle = lineStyles(i),
+                    .LineStyle = lineStyles(row),
                     .Color = OxyColors.Blue,
                     .Title = y1AxisTitle
                 }
@@ -768,7 +788,7 @@ Public Class AnalysisForm
             If (y2Index < Main.LAST) Then
                 lineSeries2 = New OxyPlot.Series.LineSeries With {
                     .YAxisKey = "y2",
-                    .LineStyle = lineStyles(i),
+                    .LineStyle = lineStyles(row),
                     .Color = OxyColors.Red,
                     .Title = y2AxisTitle
                 }
@@ -780,7 +800,7 @@ Public Class AnalysisForm
 
                 lineSeries3 = New OxyPlot.Series.LineSeries With {
                     .YAxisKey = "y3",
-                    .LineStyle = lineStyles(i),
+                    .LineStyle = lineStyles(row),
                     .Color = OxyColors.Green,
                     .Title = y3AxisTitle
                 }
@@ -792,7 +812,7 @@ Public Class AnalysisForm
             If (y4Index < Main.LAST) Then
                 lineSeries4 = New OxyPlot.Series.LineSeries With {
                     .YAxisKey = "y4",
-                    .LineStyle = lineStyles(i),
+                    .LineStyle = lineStyles(row),
                     .Color = OxyColors.Yellow,
                     .Title = y4AxisTitle
                 }
@@ -800,22 +820,23 @@ Public Class AnalysisForm
                 plotModel.Series.Add(lineSeries4)
             End If
 
-            Dim x1Max As Double
-            Dim y1Max As Double
-            Dim y1MaxX As Double
-            Dim y2Max As Double
-            Dim y2MaxX As Double
-            Dim y3Max As Double
-            Dim y3MaxX As Double
-            Dim y4Max As Double
-            Dim y4MaxX As Double
+            Dim x1Max As Double = 0
+            Dim y1Max As Double = 0
+            Dim y1MaxX As Double = 0
+            Dim y2Max As Double = 0
+            Dim y2MaxX As Double = 0
+            Dim y3Max As Double = 0
+            Dim y3MaxX As Double = 0
+            Dim y4Max As Double = 0
+            Dim y4MaxX As Double = 0
 
             For Each dataRecord As DataRecord In dataRecordsList(i)
                 Dim xValue As Double = Main.DataActions(xIndex)(dataRecord) * Main.DataUnits(xIndex, xUnitsIndex)
-                Dim y1Value As Double
-                Dim y2Value As Double
-                Dim y3Value As Double
-                Dim y4Value As Double
+                Dim y1Value As Double = 0
+                Dim y2Value As Double = 0
+                Dim y3Value As Double = 0
+                Dim y4Value As Double = 0
+
 
                 x1Max = Math.Max(x1Max, xValue)
 
@@ -857,43 +878,45 @@ Public Class AnalysisForm
 
             Next
 
-            Select Case i
+            Select Case row
                 Case 0
-                    lblFile1.Text = clbFiles.Items.Item(0).ToString()
+                    lblFile1.Text = clbFiles.Items.Item(i).ToString()
                     lblXMax1.Text = Main.NewCustomFormat(x1Max)
                     lblY1Max1.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
                     lblY2Max1.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
                     lblY3Max1.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
                     lblY4Max1.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
                 Case 1
-                    lblFile2.Text = clbFiles.Items.Item(1).ToString()
+                    lblFile2.Text = clbFiles.Items.Item(i).ToString()
                     lblXMax2.Text = Main.NewCustomFormat(x1Max)
                     lblY1Max2.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
                     lblY2Max2.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
                     lblY3Max2.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
                     lblY4Max2.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
                 Case 2
-                    lblFile3.Text = clbFiles.Items.Item(2).ToString()
+                    lblFile3.Text = clbFiles.Items.Item(i).ToString()
                     lblXMax3.Text = Main.NewCustomFormat(x1Max)
                     lblY1Max3.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
                     lblY2Max3.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
                     lblY3Max3.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
                     lblY4Max3.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
                 Case 3
-                    lblFile4.Text = clbFiles.Items.Item(3).ToString()
+                    lblFile4.Text = clbFiles.Items.Item(i).ToString()
                     lblXMax4.Text = Main.NewCustomFormat(x1Max)
                     lblY1Max4.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
                     lblY2Max4.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
                     lblY3Max4.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
                     lblY4Max4.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
                 Case 4
-                    lblFile5.Text = clbFiles.Items.Item(4).ToString()
+                    lblFile5.Text = clbFiles.Items.Item(i).ToString()
                     lblXMax5.Text = Main.NewCustomFormat(x1Max)
                     lblY1Max5.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
                     lblY2Max5.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
                     lblY3Max5.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
                     lblY4Max5.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
             End Select
+
+            row = row + 1
         Next
 
         Me.ResumeLayout()
@@ -1056,7 +1079,15 @@ Public Class AnalysisForm
     End Sub
 
     Private Sub clbFiles_SelectedIndexChanged(sender As Object, e As EventArgs) Handles clbFiles.SelectedIndexChanged
+    End Sub
+
+    Private Sub clbFiles_SelectedValueChanged(sender As Object, e As EventArgs) Handles clbFiles.SelectedValueChanged
+        If clbFiles.CheckedItems.Count > 5 Then
+            MessageBox.Show("Only the first 5 selected files can be displayed. Please deselect one or more files!", "Too many files selected", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return
+        End If
 
         SetupDiagram()
+
     End Sub
 End Class

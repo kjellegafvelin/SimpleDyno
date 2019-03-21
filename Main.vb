@@ -198,7 +198,7 @@ Public Class Main
 #End Region
 #Region "SimpleDyno Definitions "
     'Version Strings
-    Public Shared MainTitle As String = "SimpleDyno 6.5.1"
+    Public Shared MainTitle As String = "SimpleDyno 6.5.2"
     Public Shared PowerRunVersion As String = "POWER_RUN_" & SDVersion
     Public Shared LogRawVersion As String = "LOG_RAW_" & SDVersion
     Public Shared InterfaceVersion As String = "SimpleDyno_Interface_" & SDVersion
