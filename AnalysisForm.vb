@@ -544,13 +544,15 @@ Public Class AnalysisForm
 
 
     Friend Sub btnAddOverlayFile_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnAddOverlayFile.Click
-        With OpenFileDialog1
-            .Reset()
-            .Filter = "Power Run files v6.3+ (*.sdp)|*.sdp|Power Run Files v5.5+ (*.txt)|*.txt"
-            If .ShowDialog() <> DialogResult.OK Then
-                Return
-            End If
-        End With
+        If Not e.Equals(System.EventArgs.Empty) Then
+            With OpenFileDialog1
+                .Reset()
+                .Filter = "Power Run files v6.3+ (*.sdp)|*.sdp|Power Run Files v5.5+ (*.txt)|*.txt"
+                If .ShowDialog() <> DialogResult.OK Then
+                    Return
+                End If
+            End With
+        End If
 
         Dim fileName As String = OpenFileDialog1.FileName
 
