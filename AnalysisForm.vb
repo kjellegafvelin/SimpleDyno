@@ -29,6 +29,8 @@ Public Class AnalysisForm
     Private chartControl As ChartControl
     Private OverlayXSelected As Double
     Private OverlayPlotMax As Boolean = True
+    Private plotModel As OxyPlot.PlotModel
+    Private dataRecordsList As List(Of List(Of DataRecord)) = New List(Of List(Of DataRecord))()
 
     Friend Sub Analysis_Setup()
         ReDim OverlayFiles(MAXDATAFILES)
@@ -61,7 +63,6 @@ Public Class AnalysisForm
         ' tempsplit2(paramcount) = tempsplit2(paramcount).Replace("_", " ")
         ' Next
         cmbOverlayDataX.Items.AddRange(tempsplit2)
-        tempstring = "(None)_" + tempstring
         tempsplit2 = Split(tempstring, "_")
         cmbOverlayDataY1.Items.AddRange(tempsplit2)
         cmbOverlayDataY2.Items.AddRange(tempsplit2)
@@ -77,7 +78,7 @@ Public Class AnalysisForm
         cmbOverlayDataY4.SelectedIndex = 0
         cmbOverlayCorrectedSpeedUnits.SelectedIndex = 0
 
-        pnlOverlaySetup()
+        'pnlOverlaySetup()
 
         With chartControl
             .PicOverlayHeight = PicOverlayHeight
@@ -91,6 +92,7 @@ Public Class AnalysisForm
             .AnalyzedData = AnalyzedData
             .xAxis = xAxis
         End With
+
 
     End Sub
     Private Sub Analysis_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
@@ -565,72 +567,334 @@ Public Class AnalysisForm
             AnalyzedData = .AnalyzedData
         End With
 
+        clbFiles.Items.Add(Path.GetFileNameWithoutExtension(fileName), True)
+        Me.dataRecordsList.Add(dataRecords)
 
-        Dim plotModel As OxyPlot.PlotModel = New OxyPlot.PlotModel() With {
-            .Background = OxyColors.White,
-            .Title = fileName,
-            .IsLegendVisible = True
-        }
+        SetupDiagram()
 
-
-        Me.PlotView1.Model = plotModel
-
-
-        plotModel.Axes.Add(New LinearAxis() With {
-                       .Key = "rpm",
-                       .Position = OxyPlot.Axes.AxisPosition.Bottom,
-                       .Title = "Rpm",
-                       .MajorGridlineStyle = LineStyle.Solid
-                       })
-
-        plotModel.Axes.Add(New LinearAxis() With {
-                        .Key = "hp",
-                        .Position = OxyPlot.Axes.AxisPosition.Left,
-                        .Title = "Power",
-                        .MajorGridlineStyle = LineStyle.Solid,
-                        .MajorStep = 1, .Unit = "HP"
-                        })
-
-        plotModel.Axes.Add(New LinearAxis() With {
-                           .Key = "torque",
-                           .Position = OxyPlot.Axes.AxisPosition.Right,
-                           .Title = "Torque",
-                           .MajorGridlineStyle = LineStyle.Dash,
-                           .MajorStep = 1, .Unit = "Nm"
-                           })
-
-        Dim hplineSeries As New OxyPlot.Series.LineSeries With {
-            .YAxisKey = "hp",
-            .Color = OxyColors.Blue,
-            .Title = "HP"
-        }
-
-        Dim torqueLineSeries As New OxyPlot.Series.LineSeries With {
-            .YAxisKey = "torque",
-            .Color = OxyColors.Red,
-            .Title = "Torque"
-        }
-
-
-        plotModel.Series.Add(hplineSeries)
-        plotModel.Series.Add(torqueLineSeries)
-
-        For Each dataRecord As DataRecord In dataRecords
-            Dim power As Double = dataRecord.Power * 0.00134102209
-            Dim rpm As Integer = CInt(dataRecord.RPM1_Motor * (60 / (2 * Math.PI)))
-            Dim torque As Double = dataRecord.Motor_Torque
-
-
-            hplineSeries.Points.Add(New OxyPlot.DataPoint(rpm, power))
-            torqueLineSeries.Points.Add(New OxyPlot.DataPoint(rpm, torque))
-
-        Next
-
-
+        btnAddOverlayFile.Enabled = dataRecordsList.Count < 5
 
         Main.SetMouseNormal_ThreadSafe(Me)
 
         'pnlOverlaySetup()
+    End Sub
+
+    Private Sub SetupDiagram()
+
+        Me.plotModel = New OxyPlot.PlotModel() With {
+            .Background = OxyColors.White,
+            .AxisTierDistance = 0,
+            .PlotMargins = New OxyThickness(100, 0, 100, 50),
+            .IsLegendVisible = True
+        }
+
+        Me.PlotView1.Model = Me.plotModel
+
+        Dim i As Integer
+        Dim xIndex As Integer = cmbOverlayDataX.SelectedIndex
+        Dim xUnitsIndex As Integer = cmbOverlayUnitsX.SelectedIndex
+
+        Dim xAxisUnit As String = Main.DataUnitTags(xIndex).Split(CType(" ", Char()))(xUnitsIndex)
+        Dim xAxisTitle As String = Main.DataTags(xIndex)
+        lblXTitle.Text = xAxisTitle
+        lblXUnit.Text = "Max (" & xAxisUnit & ")"
+
+        Dim y1Index As Integer
+        Dim y1UnitsIndex As Integer
+        Dim y1AxisUnit As String
+        Dim y1AxisTitle As String
+
+        Dim y2Index As Integer
+        Dim y2UnitsIndex As Integer
+        Dim y2AxisUnit As String
+        Dim y2AxisTitle As String
+
+        Dim y3Index As Integer
+        Dim y3UnitsIndex As Integer
+        Dim y3AxisUnit As String
+        Dim y3AxisTitle As String
+
+        Dim y4Index As Integer
+        Dim y4UnitsIndex As Integer
+        Dim y4AxisUnit As String
+        Dim y4AxisTitle As String
+
+        Me.SuspendLayout()
+
+        lblFile1.Text = ""
+        lblFile2.Text = ""
+        lblFile3.Text = ""
+        lblFile4.Text = ""
+        lblFile5.Text = ""
+        lblXMax1.Text = ""
+        lblY1Max1.Text = ""
+        lblY2Max1.Text = ""
+        lblY3Max1.Text = ""
+        lblY4Max1.Text = ""
+        lblXMax2.Text = ""
+        lblY1Max2.Text = ""
+        lblY2Max2.Text = ""
+        lblY3Max2.Text = ""
+        lblY4Max2.Text = ""
+        lblXMax3.Text = ""
+        lblY1Max3.Text = ""
+        lblY2Max3.Text = ""
+        lblY3Max3.Text = ""
+        lblY4Max3.Text = ""
+        lblXMax4.Text = ""
+        lblY1Max4.Text = ""
+        lblY2Max4.Text = ""
+        lblY3Max4.Text = ""
+        lblY4Max4.Text = ""
+        lblXMax5.Text = ""
+        lblY1Max5.Text = ""
+        lblY2Max5.Text = ""
+        lblY3Max5.Text = ""
+        lblY4Max5.Text = ""
+
+        y1Index = Math.Max(cmbOverlayDataY1.SelectedIndex, 0)
+        y1UnitsIndex = Math.Max(cmbOverlayUnitsY1.SelectedIndex, 0)
+        If (y1Index < Main.LAST) Then
+            y1AxisUnit = Main.DataUnitTags(y1Index).Split(CType(" ", Char()))(y1UnitsIndex)
+            y1AxisTitle = Main.DataTags(y1Index)
+            lblY1Title.Text = y1AxisTitle
+            lblY1Unit.Text = "Max (" & y1AxisUnit & ")"
+        End If
+
+        y2Index = Math.Max(cmbOverlayDataY2.SelectedIndex, 0)
+        y2UnitsIndex = Math.Max(cmbOverlayUnitsY2.SelectedIndex, 0)
+        If (y2Index < Main.LAST) Then
+            y2AxisUnit = Main.DataUnitTags(y2Index).Split(CType(" ", Char()))(y2UnitsIndex)
+            y2AxisTitle = Main.DataTags(y2Index)
+            lblY2Title.Text = y2AxisTitle
+            lblY2Unit.Text = "Max (" & y2AxisUnit & ")"
+        End If
+
+        y3Index = Math.Max(cmbOverlayDataY3.SelectedIndex, 0)
+        y3UnitsIndex = Math.Max(cmbOverlayUnitsY3.SelectedIndex, 0)
+        If (y3Index < Main.LAST) Then
+            y3AxisUnit = Main.DataUnitTags(y3Index).Split(CType(" ", Char()))(y3UnitsIndex)
+            y3AxisTitle = Main.DataTags(y3Index)
+            lblY3Title.Text = y3AxisTitle
+            lblY3Unit.Text = "Max (" & y3AxisUnit & ")"
+        End If
+
+        y4Index = Math.Max(cmbOverlayDataY4.SelectedIndex, 0)
+        y4UnitsIndex = Math.Max(cmbOverlayUnitsY4.SelectedIndex, 0)
+        If (y4Index < Main.LAST) Then
+            y4AxisUnit = Main.DataUnitTags(y4Index).Split(CType(" ", Char()))(y4UnitsIndex)
+            y4AxisTitle = Main.DataTags(y4Index)
+            lblY4Title.Text = y4AxisTitle
+            lblY4Unit.Text = "Max (" & y4AxisUnit & ")"
+        End If
+
+        plotModel.Axes.Add(New LinearAxis() With {
+                           .Key = "x",
+                           .Position = OxyPlot.Axes.AxisPosition.Bottom,
+                           .Title = xAxisTitle,
+                           .MajorGridlineStyle = LineStyle.Solid,
+                           .Unit = xAxisUnit
+                           })
+
+        If (y1Index < Main.LAST) Then
+            plotModel.Axes.Add(New LinearAxis() With {
+                                .Key = "y1",
+                                .Position = OxyPlot.Axes.AxisPosition.Left,
+                                .Title = y1AxisTitle,
+                                .MajorGridlineStyle = LineStyle.Solid,
+                                .MajorStep = 1, .Unit = y1AxisUnit
+                                })
+        End If
+
+        If (y2Index < Main.LAST) Then
+            plotModel.Axes.Add(New LinearAxis() With {
+                               .Key = "y2",
+                               .Position = OxyPlot.Axes.AxisPosition.Right,
+                               .Title = y2AxisTitle,
+                               .MajorGridlineStyle = LineStyle.Dash,
+                               .MajorStep = 1, .Unit = y2AxisUnit
+                               })
+        End If
+
+        If (y3Index < Main.LAST) Then
+            plotModel.Axes.Add(New LinearAxis() With {
+                           .Key = "y3",
+                           .AxisDistance = 50,
+                           .AxisTitleDistance = -46,
+                           .Position = OxyPlot.Axes.AxisPosition.Left,
+                           .Title = y3AxisTitle,
+                           .MajorGridlineStyle = LineStyle.Dash,
+                           .MajorStep = 1, .Unit = y3AxisUnit
+                           })
+        End If
+
+        If (y4Index < Main.LAST) Then
+            plotModel.Axes.Add(New LinearAxis() With {
+                           .Key = "y4",
+                           .AxisDistance = 50,
+                           .AxisTitleDistance = -46,
+                           .Position = OxyPlot.Axes.AxisPosition.Right,
+                           .Title = y4AxisTitle,
+                           .MajorGridlineStyle = LineStyle.Dash,
+                           .MajorStep = 1, .Unit = y4AxisUnit
+                           })
+        End If
+
+        Dim lineStyles As LineStyle() = {LineStyle.Solid, LineStyle.Dash, LineStyle.LongDash, LineStyle.DashDot, LineStyle.LongDashDot}
+
+
+
+        For i = 0 To dataRecordsList.Count - 1
+
+            If (clbFiles.CheckedIndices.Contains(i) = False) Then
+                Continue For
+            End If
+
+            Dim lineSeries1 As OxyPlot.Series.LineSeries
+            If (y1Index < Main.LAST) Then
+
+                lineSeries1 = New OxyPlot.Series.LineSeries With {
+                    .YAxisKey = "y1",
+                    .LineStyle = lineStyles(i),
+                    .Color = OxyColors.Blue,
+                    .Title = y1AxisTitle
+                }
+                plotModel.Series.Add(lineSeries1)
+            End If
+
+            Dim lineSeries2 As OxyPlot.Series.LineSeries
+            If (y2Index < Main.LAST) Then
+                lineSeries2 = New OxyPlot.Series.LineSeries With {
+                    .YAxisKey = "y2",
+                    .LineStyle = lineStyles(i),
+                    .Color = OxyColors.Red,
+                    .Title = y2AxisTitle
+                }
+                plotModel.Series.Add(lineSeries2)
+            End If
+
+            Dim lineSeries3 As OxyPlot.Series.LineSeries
+            If (y3Index < Main.LAST) Then
+
+                lineSeries3 = New OxyPlot.Series.LineSeries With {
+                    .YAxisKey = "y3",
+                    .LineStyle = lineStyles(i),
+                    .Color = OxyColors.Green,
+                    .Title = y3AxisTitle
+                }
+
+                plotModel.Series.Add(lineSeries3)
+            End If
+
+            Dim lineSeries4 As OxyPlot.Series.LineSeries
+            If (y4Index < Main.LAST) Then
+                lineSeries4 = New OxyPlot.Series.LineSeries With {
+                    .YAxisKey = "y4",
+                    .LineStyle = lineStyles(i),
+                    .Color = OxyColors.Yellow,
+                    .Title = y4AxisTitle
+                }
+
+                plotModel.Series.Add(lineSeries4)
+            End If
+
+            Dim x1Max As Double
+            Dim y1Max As Double
+            Dim y1MaxX As Double
+            Dim y2Max As Double
+            Dim y2MaxX As Double
+            Dim y3Max As Double
+            Dim y3MaxX As Double
+            Dim y4Max As Double
+            Dim y4MaxX As Double
+
+            For Each dataRecord As DataRecord In dataRecordsList(i)
+                Dim xValue As Double = Main.DataActions(xIndex)(dataRecord) * Main.DataUnits(xIndex, xUnitsIndex)
+                Dim y1Value As Double
+                Dim y2Value As Double
+                Dim y3Value As Double
+                Dim y4Value As Double
+
+                x1Max = Math.Max(x1Max, xValue)
+
+                If (y1Index < Main.LAST) Then
+                    y1Value = Main.DataActions(y1Index)(dataRecord) * Main.DataUnits(y1Index, y1UnitsIndex)
+                    lineSeries1.Points.Add(New OxyPlot.DataPoint(xValue, y1Value))
+                    If (y1Value > y1Max) Then
+                        y1Max = y1Value
+                        y1MaxX = xValue
+                    End If
+                End If
+
+                If (y2Index < Main.LAST) Then
+                    y2Value = Main.DataActions(y2Index)(dataRecord) * Main.DataUnits(y2Index, y2UnitsIndex)
+                    lineSeries2.Points.Add(New OxyPlot.DataPoint(xValue, y2Value))
+                    If (y2Value > y2Max) Then
+                        y2Max = y2Value
+                        y2MaxX = xValue
+                    End If
+                End If
+
+                If (y3Index < Main.LAST) Then
+                    y3Value = Main.DataActions(y3Index)(dataRecord) * Main.DataUnits(y3Index, y3UnitsIndex)
+                    lineSeries3.Points.Add(New OxyPlot.DataPoint(xValue, y3Value))
+                    If (y3Value > y3Max) Then
+                        y3Max = y3Value
+                        y3MaxX = xValue
+                    End If
+                End If
+
+                If (y4Index < Main.LAST) Then
+                    y4Value = Main.DataActions(y4Index)(dataRecord) * Main.DataUnits(y4Index, y4UnitsIndex)
+                    lineSeries4.Points.Add(New OxyPlot.DataPoint(xValue, y4Value))
+                    If (y4Value > y4Max) Then
+                        y4Max = y4Value
+                        y4MaxX = xValue
+                    End If
+                End If
+
+            Next
+
+            Select Case i
+                Case 0
+                    lblFile1.Text = clbFiles.Items.Item(0).ToString()
+                    lblXMax1.Text = Main.NewCustomFormat(x1Max)
+                    lblY1Max1.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
+                    lblY2Max1.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
+                    lblY3Max1.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
+                    lblY4Max1.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
+                Case 1
+                    lblFile2.Text = clbFiles.Items.Item(1).ToString()
+                    lblXMax2.Text = Main.NewCustomFormat(x1Max)
+                    lblY1Max2.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
+                    lblY2Max2.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
+                    lblY3Max2.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
+                    lblY4Max2.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
+                Case 2
+                    lblFile3.Text = clbFiles.Items.Item(2).ToString()
+                    lblXMax3.Text = Main.NewCustomFormat(x1Max)
+                    lblY1Max3.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
+                    lblY2Max3.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
+                    lblY3Max3.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
+                    lblY4Max3.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
+                Case 3
+                    lblFile4.Text = clbFiles.Items.Item(3).ToString()
+                    lblXMax4.Text = Main.NewCustomFormat(x1Max)
+                    lblY1Max4.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
+                    lblY2Max4.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
+                    lblY3Max4.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
+                    lblY4Max4.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
+                Case 4
+                    lblFile5.Text = clbFiles.Items.Item(4).ToString()
+                    lblXMax5.Text = Main.NewCustomFormat(x1Max)
+                    lblY1Max5.Text = Main.NewCustomFormat(y1Max) & " @ " & Main.NewCustomFormat(y1MaxX) & " " & xAxisUnit
+                    lblY2Max5.Text = Main.NewCustomFormat(y2Max) & " @ " & Main.NewCustomFormat(y2MaxX) & " " & xAxisUnit
+                    lblY3Max5.Text = Main.NewCustomFormat(y3Max) & " @ " & Main.NewCustomFormat(y3MaxX) & " " & xAxisUnit
+                    lblY4Max5.Text = Main.NewCustomFormat(y4Max) & " @ " & Main.NewCustomFormat(y4MaxX) & " " & xAxisUnit
+            End Select
+        Next
+
+        Me.ResumeLayout()
     End Sub
 
     Friend Sub btnClearOverlay_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnClearOverlay.Click
@@ -638,7 +902,12 @@ Public Class AnalysisForm
         OverlayFileCount = 0
         btnAddOverlayFile.Enabled = True
         Main.frmFit.chkAddOrNew.Enabled = True
-        pnlOverlaySetup()
+
+        dataRecordsList.Clear()
+        clbFiles.Items.Clear()
+        SetupDiagram()
+        'pnlOverlaySetup()
+        btnAddOverlayFile.Enabled = True
     End Sub
     Private Sub btnSaveOverlay_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnSaveOverlay.Click
         With SaveFileDialog1
@@ -659,7 +928,9 @@ Public Class AnalysisForm
             cmbOverlayUnitsX.Items.Add("--")
             cmbOverlayUnitsX.SelectedIndex = 0
         End If
-        pnlOverlaySetup()
+
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
     Private Sub cmbOverlayY1_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayDataY1.SelectedIndexChanged
         cmbOverlayUnitsY1.Items.Clear()
@@ -670,7 +941,9 @@ Public Class AnalysisForm
             cmbOverlayUnitsY1.Items.Add("--")
             cmbOverlayUnitsY1.SelectedIndex = 0
         End If
-        pnlOverlaySetup()
+
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
     Private Sub cmbOverlayY2_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayDataY2.SelectedIndexChanged
         cmbOverlayUnitsY2.Items.Clear()
@@ -681,7 +954,9 @@ Public Class AnalysisForm
             cmbOverlayUnitsY2.Items.Add("--")
             cmbOverlayUnitsY2.SelectedIndex = 0
         End If
-        pnlOverlaySetup()
+
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
     Private Sub cmbOverlayY3_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayDataY3.SelectedIndexChanged
         cmbOverlayUnitsY3.Items.Clear()
@@ -692,7 +967,9 @@ Public Class AnalysisForm
             cmbOverlayUnitsY3.Items.Add("--")
             cmbOverlayUnitsY3.SelectedIndex = 0
         End If
-        pnlOverlaySetup()
+
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
     Private Sub cmbOverlayY4_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayDataY4.SelectedIndexChanged
         cmbOverlayUnitsY4.Items.Clear()
@@ -703,32 +980,49 @@ Public Class AnalysisForm
             cmbOverlayUnitsY4.Items.Add("--")
             cmbOverlayUnitsY4.SelectedIndex = 0
         End If
-        pnlOverlaySetup()
+
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
+
     Private Sub cmbOverlayXUnits_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayUnitsX.SelectedIndexChanged
-        pnlOverlaySetup()
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
+
     Private Sub cmbOverlayY1Units_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayUnitsY1.SelectedIndexChanged
-        pnlOverlaySetup()
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
+
     Private Sub cmbOverlayY2Units_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayUnitsY2.SelectedIndexChanged
-        pnlOverlaySetup()
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
+
     Private Sub cmbOverlayY3Units_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayUnitsY3.SelectedIndexChanged
-        pnlOverlaySetup()
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
+
     Private Sub cmbOverlayY4Units_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayUnitsY4.SelectedIndexChanged
-        pnlOverlaySetup()
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
+
     Private Sub CheckBox1_CheckedChanged(ByVal sender As System.Object, ByVal e As System.EventArgs)
-        pnlOverlaySetup()
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
+
     Private Sub cmbOverlayCorrectedSpeedUnits_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmbOverlayCorrectedSpeedUnits.SelectedIndexChanged
-        pnlOverlaySetup()
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
 
     Private Sub pnlDataOverlay_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles pnlDataOverlay.Click
-        pnlOverlaySetup()
+        SetupDiagram()
+        'pnlOverlaySetup()
     End Sub
     Private Sub pnlDataOverlay_MouseMove(ByVal sender As Object, ByVal e As System.Windows.Forms.MouseEventArgs) Handles pnlDataOverlay.MouseMove
         'Display the X values based on the drawing window coordinates
@@ -757,5 +1051,10 @@ Public Class AnalysisForm
                 lblCurrentXValue.Text = Main.NewCustomFormat(OverlayXSelected * Main.DataUnits(cmbOverlayDataX.SelectedIndex, cmbOverlayUnitsX.SelectedIndex)) & " " & cmbOverlayUnitsX.SelectedItem.ToString
             End If
         End If
+    End Sub
+
+    Private Sub clbFiles_SelectedIndexChanged(sender As Object, e As EventArgs) Handles clbFiles.SelectedIndexChanged
+
+        SetupDiagram()
     End Sub
 End Class
