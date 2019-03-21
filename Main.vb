@@ -407,7 +407,7 @@ Public Class Main
     Public Shared SpeedAir As Double
 
     'File Handling Specific
-    Private SettingsDirectory As String = "C:\SimpleDyno"
+    Private SettingsDirectory As String = Environment.CurrentDirectory '  "C:\SimpleDyno"
     Private SettingsFile As String = "\SimpleDynoSettings.sds"
     Private DefaultViewFile As String = "\DefaultView.sdi"
     Private DataOutputFile As StreamWriter
