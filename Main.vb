@@ -847,7 +847,7 @@ Public Class Main
         Me.txtInterface.Size = New System.Drawing.Size(23, 21)
         Me.txtInterface.TabIndex = 175
         Me.txtInterface.Tag = ""
-        Me.txtInterface.Text = "C:\SimpleDyno\DefaultView.sdi"
+        Me.txtInterface.Text = Path.Combine(Me.SettingsDirectory, "DefaultView.sdi")
         Me.txtInterface.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
         Me.txtInterface.Visible = False
         '
