@@ -413,7 +413,7 @@ Public Class DataInputFileReader
                         Return dataRecords
 
                     Case Else
-                        Throw New InvalidOperationException("Invalid data file type.")
+                        Throw New FileFormatException(New Uri(fileName), "Invalid data file type.")
 
                 End Select
 

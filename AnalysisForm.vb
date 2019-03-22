@@ -567,13 +567,24 @@ Public Class AnalysisForm
             Main.SetMouseBusy_ThreadSafe(Me)
 
             Dim dataRecords As List(Of DataRecord)
-            With dataInputFileReader
-                '.ReadDataFile(fileName)
-                dataRecords = .ReadDataFile2(fileName)
-                OverlayFileCount = .OverlayFileCount
-                OverlayFiles = .OverlayFiles
-                AnalyzedData = .AnalyzedData
-            End With
+
+            Try
+                With dataInputFileReader
+                    '.ReadDataFile(fileName)
+                    dataRecords = .ReadDataFile2(fileName)
+                    OverlayFileCount = .OverlayFileCount
+                    OverlayFiles = .OverlayFiles
+                    AnalyzedData = .AnalyzedData
+                End With
+            Catch ex As FileFormatException
+                MessageBox.Show("The file '" & fileName & "' has an invalid file format. Please try another file!", "File error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Main.SetMouseNormal_ThreadSafe(Me)
+                Return
+            Catch
+                MessageBox.Show("Could not open the file '" & fileName & "'!", "File error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Main.SetMouseNormal_ThreadSafe(Me)
+                Return
+            End Try
 
             clbFiles.Items.Add(Path.GetFileNameWithoutExtension(fileName), clbFiles.CheckedItems.Count < 5)
             Me.dataRecordsList.Add(dataRecords)
