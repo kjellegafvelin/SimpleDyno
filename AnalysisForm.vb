@@ -576,6 +576,10 @@ Public Class AnalysisForm
                     OverlayFiles = .OverlayFiles
                     AnalyzedData = .AnalyzedData
                 End With
+            Catch ex As FileNotFoundException
+                MessageBox.Show("Could not find the The file '" & ex.FileName & "'!. Please try another file!", "File error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Main.SetMouseNormal_ThreadSafe(Me)
+                Return
             Catch ex As FileFormatException
                 MessageBox.Show("The file '" & fileName & "' has an invalid file format. Please try another file!", "File error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Main.SetMouseNormal_ThreadSafe(Me)

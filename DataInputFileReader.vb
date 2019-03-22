@@ -286,7 +286,7 @@ Public Class DataInputFileReader
         Dim PointCount As Integer
 
         If fileName = "" Then
-            Throw New InvalidOperationException("Filename is missing")
+            Throw New FileNotFoundException("Filename is missing")
         End If
         Using dataFileReader As New System.IO.StreamReader(fileName)
 
