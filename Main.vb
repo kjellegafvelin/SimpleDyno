@@ -198,7 +198,7 @@ Public Class Main
 #End Region
 #Region "SimpleDyno Definitions "
     'Version Strings
-    Public Shared MainTitle As String = "SimpleDyno 6.5.2"
+    Public Shared MainTitle As String = "SimpleDyno " & SDVersion & " by DamoRC"
     Public Shared PowerRunVersion As String = "POWER_RUN_" & SDVersion
     Public Shared LogRawVersion As String = "LOG_RAW_" & SDVersion
     Public Shared InterfaceVersion As String = "SimpleDyno_Interface_" & SDVersion
@@ -1010,7 +1010,7 @@ Public Class Main
 
         'Set Size and Title
         Me.Top = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea.Height - Me.Height
-        Me.Text = MainTitle
+        Me.Text = "SimpleDyno 6.5.3" ' MainTitle
 
         'Open Up the default interface
         LoadInterface()
