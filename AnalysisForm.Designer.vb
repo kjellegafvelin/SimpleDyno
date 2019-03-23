@@ -53,7 +53,6 @@ Partial Class AnalysisForm
         Me.Label4 = New System.Windows.Forms.Label()
         Me.Label5 = New System.Windows.Forms.Label()
         Me.Panel1 = New System.Windows.Forms.Panel()
-        Me.pnlDataOverlay = New SimpleDyno.DoubleBufferPanel()
         Me.Label6 = New System.Windows.Forms.Label()
         Me.clbFiles = New System.Windows.Forms.CheckedListBox()
         Me.PlotView1 = New OxyPlot.WindowsForms.PlotView()
@@ -99,6 +98,7 @@ Partial Class AnalysisForm
         Me.lblY4Max3 = New System.Windows.Forms.Label()
         Me.lblY4Max4 = New System.Windows.Forms.Label()
         Me.lblY4Max5 = New System.Windows.Forms.Label()
+        Me.pnlDataOverlay = New SimpleDyno.DoubleBufferPanel()
         Me.Panel1.SuspendLayout()
         Me.TableLayoutPanel1.SuspendLayout()
         Me.TableLayoutPanel2.SuspendLayout()
@@ -404,18 +404,6 @@ Partial Class AnalysisForm
         Me.Panel1.Size = New System.Drawing.Size(181, 738)
         Me.Panel1.TabIndex = 110
         '
-        'pnlDataOverlay
-        '
-        Me.pnlDataOverlay.BackColor = System.Drawing.Color.White
-        Me.pnlDataOverlay.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None
-        Me.pnlDataOverlay.Location = New System.Drawing.Point(141, 6)
-        Me.pnlDataOverlay.Margin = New System.Windows.Forms.Padding(0)
-        Me.pnlDataOverlay.Name = "pnlDataOverlay"
-        Me.pnlDataOverlay.Size = New System.Drawing.Size(767, 136)
-        Me.pnlDataOverlay.TabIndex = 0
-        Me.pnlDataOverlay.TabStop = True
-        Me.pnlDataOverlay.Visible = False
-        '
         'Label6
         '
         Me.Label6.AutoSize = True
@@ -449,6 +437,7 @@ Partial Class AnalysisForm
         '
         'TableLayoutPanel1
         '
+        Me.TableLayoutPanel1.BackColor = System.Drawing.Color.White
         Me.TableLayoutPanel1.ColumnCount = 1
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20.0!))
@@ -467,6 +456,7 @@ Partial Class AnalysisForm
         '
         'TableLayoutPanel2
         '
+        Me.TableLayoutPanel2.BackColor = System.Drawing.Color.White
         Me.TableLayoutPanel2.ColumnCount = 6
         Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.66667!))
         Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.66667!))
@@ -685,6 +675,7 @@ Partial Class AnalysisForm
         'lblFile2
         '
         Me.lblFile2.AutoSize = True
+        Me.lblFile2.ForeColor = System.Drawing.Color.Blue
         Me.lblFile2.Location = New System.Drawing.Point(3, 60)
         Me.lblFile2.Name = "lblFile2"
         Me.lblFile2.Size = New System.Drawing.Size(66, 20)
@@ -742,6 +733,7 @@ Partial Class AnalysisForm
         'lblFile3
         '
         Me.lblFile3.AutoSize = True
+        Me.lblFile3.ForeColor = System.Drawing.Color.Red
         Me.lblFile3.Location = New System.Drawing.Point(3, 80)
         Me.lblFile3.Name = "lblFile3"
         Me.lblFile3.Size = New System.Drawing.Size(66, 20)
@@ -799,6 +791,7 @@ Partial Class AnalysisForm
         'lblFile4
         '
         Me.lblFile4.AutoSize = True
+        Me.lblFile4.ForeColor = System.Drawing.Color.Green
         Me.lblFile4.Location = New System.Drawing.Point(3, 100)
         Me.lblFile4.Name = "lblFile4"
         Me.lblFile4.Size = New System.Drawing.Size(66, 20)
@@ -856,6 +849,7 @@ Partial Class AnalysisForm
         'lblFile5
         '
         Me.lblFile5.AutoSize = True
+        Me.lblFile5.ForeColor = System.Drawing.Color.Purple
         Me.lblFile5.Location = New System.Drawing.Point(3, 120)
         Me.lblFile5.Name = "lblFile5"
         Me.lblFile5.Size = New System.Drawing.Size(66, 20)
@@ -988,6 +982,18 @@ Partial Class AnalysisForm
         Me.lblY4Max5.TabIndex = 39
         Me.lblY4Max5.Text = "Label14"
         Me.lblY4Max5.TextAlign = System.Drawing.ContentAlignment.TopCenter
+        '
+        'pnlDataOverlay
+        '
+        Me.pnlDataOverlay.BackColor = System.Drawing.Color.White
+        Me.pnlDataOverlay.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None
+        Me.pnlDataOverlay.Location = New System.Drawing.Point(141, 6)
+        Me.pnlDataOverlay.Margin = New System.Windows.Forms.Padding(0)
+        Me.pnlDataOverlay.Name = "pnlDataOverlay"
+        Me.pnlDataOverlay.Size = New System.Drawing.Size(767, 136)
+        Me.pnlDataOverlay.TabIndex = 0
+        Me.pnlDataOverlay.TabStop = True
+        Me.pnlDataOverlay.Visible = False
         '
         'AnalysisForm
         '

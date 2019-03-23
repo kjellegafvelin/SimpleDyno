@@ -778,7 +778,7 @@ Public Class AnalysisForm
         End If
 
         Dim lineStyles As LineStyle() = {LineStyle.Solid, LineStyle.Dash, LineStyle.LongDash, LineStyle.DashDot, LineStyle.LongDashDot}
-
+        Dim colors As OxyColor() = {OxyColors.Black, OxyColors.Blue, OxyColors.Red, OxyColors.Green, OxyColors.Purple}
 
         Dim row As Integer = 0
         For i = 0 To dataRecordsList.Count - 1
@@ -792,8 +792,8 @@ Public Class AnalysisForm
 
                 lineSeries1 = New OxyPlot.Series.LineSeries With {
                     .YAxisKey = "y1",
-                    .LineStyle = lineStyles(row),
-                    .Color = OxyColors.Blue,
+                    .LineStyle = LineStyle.Solid,
+                    .Color = colors(row),
                     .Title = y1AxisTitle
                 }
                 plotModel.Series.Add(lineSeries1)
@@ -803,8 +803,8 @@ Public Class AnalysisForm
             If (y2Index < Main.LAST) Then
                 lineSeries2 = New OxyPlot.Series.LineSeries With {
                     .YAxisKey = "y2",
-                    .LineStyle = lineStyles(row),
-                    .Color = OxyColors.Red,
+                    .LineStyle = LineStyle.Dash,
+                    .Color = colors(row),
                     .Title = y2AxisTitle
                 }
                 plotModel.Series.Add(lineSeries2)
@@ -815,8 +815,8 @@ Public Class AnalysisForm
 
                 lineSeries3 = New OxyPlot.Series.LineSeries With {
                     .YAxisKey = "y3",
-                    .LineStyle = lineStyles(row),
-                    .Color = OxyColors.Green,
+                    .LineStyle = LineStyle.DashDashDot,
+                    .Color = colors(row),
                     .Title = y3AxisTitle
                 }
 
@@ -827,8 +827,8 @@ Public Class AnalysisForm
             If (y4Index < Main.LAST) Then
                 lineSeries4 = New OxyPlot.Series.LineSeries With {
                     .YAxisKey = "y4",
-                    .LineStyle = lineStyles(row),
-                    .Color = OxyColors.Yellow,
+                    .LineStyle = LineStyle.DashDotDot,
+                    .Color = colors(row),
                     .Title = y4AxisTitle
                 }
 
