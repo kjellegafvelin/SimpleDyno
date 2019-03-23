@@ -608,7 +608,7 @@ Public Class AnalysisForm
         Me.plotModel = New OxyPlot.PlotModel() With {
             .Background = OxyColors.White,
             .AxisTierDistance = 0,
-            .PlotMargins = New OxyThickness(100, 0, 100, 50),
+            .PlotMargins = New OxyThickness(100, 50, 100, 50),
             .IsLegendVisible = True
         }
 
